@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 from datetime import datetime
 import plotly.express as px
 
+from processors.limpar_dados import formatar_reais
+
 load_dotenv()
 
 # Carrea o dataframe base
@@ -58,15 +60,52 @@ with tab1:
     gastos_mes_anterior = df_mes_anterior['Proventos'].sum()
     variacao_gastos = gastos_mes_atual - gastos_mes_anterior
 
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns(2)
 
-    col1.metric(label='Número de funcionários', value=n_funcionarios_atual, delta=f"{diferenca_de_funcinarios:.2%}")
-    col2.metric(label='Gastos nesse mês', value=f'R$ {gastos_mes_atual:.2f}', delta=f'R$ {variacao_gastos:.2f}')
-    col3.metric(label='Habitantes atuando', value=f'{percentual_de_trabalhadores:.2%}', delta=f"{percentual_de_trabalhadores_mes_anterior:.2%}")
+    col2.metric(label='Número de funcionários',
+                value=n_funcionarios_atual,
+                delta=f"{diferenca_de_funcinarios:.2%}",
+                delta_color='inverse'
+                )
+
+    col1.metric(label='Gastos nesse mês',
+                value=f'{formatar_reais(gastos_mes_atual)}',
+                delta=f'{formatar_reais(variacao_gastos)}',
+                )
+
+    st.metric(label='Habitantes atuando',
+                value=f'{percentual_de_trabalhadores:.2%}',
+                delta=f"{percentual_de_trabalhadores_mes_anterior:.2%}",
+                delta_color='inverse')
 
     # Cria uma copia do df de referencia com as colunas a serem exibidas
     view_df = df_data_ref.drop(columns=['Líquido'])
-    st.data_editor(view_df)
+    view_df['Proventos'] = view_df['Proventos'].apply(formatar_reais)
+    colunas_visiveis = ['Nome Funcionário', 'Cargo', 'Regime de Trabalho', 'Proventos']
+    df_visivel = view_df[colunas_visiveis]
+
+    evento = st.dataframe(
+        df_visivel,
+        hide_index=True,
+        width='stretch',
+        selection_mode='single-row',
+        on_select='rerun',
+        column_config={
+            'Realizado_Reais': st.column_config.TextColumn('Executado (R$)')
+        }
+    )
+    linha_selecionada = evento.selection.rows
+
+    if len(linha_selecionada) > 0:
+        indice2 = linha_selecionada[0]
+
+        df_detalhado = view_df.iloc[indice2]
+
+        st.write('🔍 Ficha Completa')
+        st.dataframe(
+            df_detalhado,
+            width='stretch'
+        )
 
 
 with tab2:
