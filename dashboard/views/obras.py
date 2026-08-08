@@ -1,10 +1,9 @@
 import streamlit as st
-import pandas as pd
 import os
 from dotenv import load_dotenv
-import plotly.express as px
 
 from services.cloud_storage import obter_dados
+from processors.limpar_dados import formatar_reais
 
 load_dotenv()
 
@@ -12,6 +11,7 @@ load_dotenv()
 url = os.getenv('ARQUIVO_BASE_OBRAS_CORUPA')
 
 sucesso, df_obras = obter_dados(url)
+df_obras['Valor Total'] = df_obras['Valor Total'].astype(float).apply(formatar_reais)
 df_obras["% de execução financeira"] = df_obras["% de execução financeira"].str.replace(',', '.').astype(float)
 
 
@@ -62,31 +62,31 @@ with tab1:
             use_container_width=True
         )
 
-    with tab2:
-        df_demais_obras_filtrado = df_obras[df_obras['Situação'] != 'Em Andamento']
-        colunas_visiveis_demais_obras = ["Descrição", "Situação", "Data de Início", "Previsão Conclusão", "Valor Total"]
-        df_visivel_demais_obras = df_demais_obras_filtrado[colunas_visiveis_demais_obras]
+with tab2:
+    df_demais_obras_filtrado = df_obras[df_obras['Situação'] != 'Em Andamento']
+    colunas_visiveis_demais_obras = ["Descrição", "Situação", "Data de Início", "Previsão Conclusão", "Valor Total"]
+    df_visivel_demais_obras = df_demais_obras_filtrado[colunas_visiveis_demais_obras]
 
-        evento2 = st.dataframe(
-            df_visivel_demais_obras,
-            hide_index=True,
-            selection_mode='single-row',
-            on_select='rerun',
+    evento2 = st.dataframe(
+        df_visivel_demais_obras,
+        hide_index=True,
+        selection_mode='single-row',
+        on_select='rerun',
+        use_container_width=True
+    )
+
+    linha_selecionada2 = evento2.selection.rows
+
+    if len(linha_selecionada2) > 0:
+        indice2 = linha_selecionada2[0]
+
+        df_detalhado2 = df_demais_obras_filtrado.iloc[indice2]
+
+        st.write('🔍 Ficha Completa da Obra')
+        st.dataframe(
+            df_detalhado2,
             use_container_width=True
         )
-
-        linha_selecionada2 = evento2.selection.rows
-
-        if len(linha_selecionada2) > 0:
-            indice2 = linha_selecionada2[0]
-
-            df_detalhado2 = df_demais_obras_filtrado.iloc[indice2]
-
-            st.write('🔍 Ficha Completa da Obra')
-            st.dataframe(
-                df_detalhado2,
-                use_container_width=True
-            )
 
 
 
