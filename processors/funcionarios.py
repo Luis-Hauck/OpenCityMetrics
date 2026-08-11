@@ -1,8 +1,12 @@
 import pandas as pd
 import os
 from dotenv import load_dotenv
+import logging
+
+from utils.config import obter_caminho_arquivo
 
 load_dotenv()
+logger = logging.getLogger(__name__)
 
 token_hospedagem = os.getenv('TOKEN_HOSPEDAGEM')
 
@@ -46,37 +50,44 @@ def processar_funcionarios(novo_df:pd.DataFrame, df_base: pd.DataFrame, token_ho
         # O parâmetro keep='last' garante que, se houver conflito, o dado que veio
         # do df_novo (o que acabou de ser baixado) vença e mate o dado velho.
         df_final = df_final.drop_duplicates(
-            subset=['Funcionário', 'Cargo', 'Data'],
+            subset=['Funcionário', 'Cargo', 'data'],
             keep='last')
 
         df_final['data'] = pd.to_datetime(
             df_final['data'],
-            format = '%d-%m-%Y',
             dayfirst = True,
             errors = 'raise',
             )
 
-        caminho_local = df_final.to_parquet('data/salarios_funcionarios_corupa.parquet')
-        fazer_upload(
+        # Define o caminho do arquivo JSON local de forma robusta e garante que a pasta exista
+        caminho_local = obter_caminho_arquivo('data/funcionarios','despesas_funcionarios_corupa.json')
+        os.makedirs(os.path.dirname(caminho_local), exist_ok=True)
+
+        # Salva o DataFrame em JSON usando o formato de data ISO para evitar warnings futuros
+        df_final.to_json(caminho_local,
+                         orient='split',
+                         force_ascii=False,
+                         index=False,
+                         date_format='iso')
+
+        # Faz o upload do arquivo salvo
+        sucesso = fazer_upload(
             arquivo=caminho_local,
-            prefixo='csv',
+            prefixo='json',
             expire=90,
-            nome_arquivo='SalariosFuncionariosCorupa.parquet',
-            content_type='application/vnd.apache.parquet',
+            nome_arquivo='DespesasFuncionariosCorupa',
+            content_type='application/json; charset=Latin1',
             token_hospedagem=token_hospedagem
         )
-
+        if not sucesso:
+            logger.warning("Falha ao fazer upload do arquivo JSON.")
+            return False
+        # Remove o arquivo local após upload
         os.remove(caminho_local)
 
-        print("Dados dos funcionarios salvos com sucesso!")
+        logger.info("Dados dos funcionarios salvos com sucesso!")
 
         return True
     except Exception as e:
-        print(f"Erro ao processar os dados dos funcionarios: {e}")
+        logger.error(f"Erro ao processar os dados dos funcionarios: {e}")
         return False
-
-
-
-
-
-
