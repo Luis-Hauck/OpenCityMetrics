@@ -1,10 +1,14 @@
 from playwright.sync_api import sync_playwright
-from processors.limpar_dados import limpar_dados_brutos
 import pandas as pd
 import os
 from playwright_stealth import Stealth
 from time import sleep
 import random
+import logging
+
+from processors.limpar_dados import limpar_dados_brutos
+
+logger = logging.getLogger(__name__)
 
 def gerar_lista_meses(mes_inicio:int, mes_fim:int, ano_inicio:int, ano_fim:int) -> list[str]:
     """
@@ -32,7 +36,7 @@ def gerar_lista_meses(mes_inicio:int, mes_fim:int, ano_inicio:int, ano_fim:int) 
 
 
 
-def baixar_dados(mes_inicio:int, mes_fim:int, ano_inicio:int, ano_fim:int, url:str) -> tuple[bool, pd.DataFrame, int]:
+def baixar_dados_funcionarios(mes_inicio:int, mes_fim:int, ano_inicio:int, ano_fim:int, url:str) -> tuple[bool, pd.DataFrame, int]:
     """
     Função para coletar os dados dos funcionarios.
 
@@ -56,16 +60,16 @@ def baixar_dados(mes_inicio:int, mes_fim:int, ano_inicio:int, ano_fim:int, url:s
 
         with sync_playwright() as p:
             browser = p.chromium.launch(
-                headless=False,  # Mantenha False até passarmos pelo bloqueio na sua máquina
+                headless=False,
                 args=[
-                    "--disable-blink-features=AutomationControlled",  # Desliga o letreiro "SOU UM ROBÔ" do Chrome
-                    "--disable-infobars",  # Esconde aquela barra "O Chrome está sendo controlado por software..."
+                    "--disable-blink-features=AutomationControlled",  #
+                    "--disable-infobars",
                     "--no-sandbox",
                     "--disable-dev-shm-usage"
                 ]
             )
 
-            # 2. A CONFIGURAÇÃO DO CONTEXTO (A Identidade Humana)
+
             context = browser.new_context(
                 locale="pt-BR",
                 timezone_id="America/Sao_Paulo"
@@ -81,20 +85,24 @@ def baixar_dados(mes_inicio:int, mes_fim:int, ano_inicio:int, ano_fim:int, url:s
 
             frame = page.locator('iframe[title="Item"]').content_frame
 
-            print("Acessando o portal...")
+            logger.info("Acessando a página dos funcionários")
             page.goto(url)
 
             sleep(random.uniform(4.5, 7.2))
 
-            page.get_by_role("button", name="Rejeitar não necessários").click()
+            # Tenta rejeitar cookies se existir o botão
+            try:
+                page.get_by_role("button", name="Rejeitar não necessários").click()
+            except Exception:
+                pass
 
 
             for data in gerar_lista_meses(mes_inicio, mes_fim, ano_inicio, ano_fim):
-                print(f'Selecioando a data: {data}')
+                logger.info(f'Selecioando a data: {data}')
 
                 frame.get_by_label("Mês/Ano").select_option(label=data)
 
-                print("Iniciando o download...")
+                logger.info("Iniciando o download...")
 
 
                 page.get_by_role("button", name="Dados Abertos").click()
@@ -109,7 +117,7 @@ def baixar_dados(mes_inicio:int, mes_fim:int, ano_inicio:int, ano_fim:int, url:s
 
                 caminho_arquivo = rf"/data/funcionarios/salarios_funcionarios_corupa_{data.replace("/", "-")}.csv"
                 download.save_as(caminho_arquivo)
-                print(f"Sucesso! Arquivo salvo como: {caminho_arquivo}")
+                logger.info(f"Sucesso! Arquivo salvo como: {caminho_arquivo}")
                 df, linhas_ = limpar_dados_brutos(caminho_arquivo)
                 df['data'] = f'01/{data}'
                 lista_dfs.append(df)
@@ -117,21 +125,14 @@ def baixar_dados(mes_inicio:int, mes_fim:int, ano_inicio:int, ano_fim:int, url:s
 
                 #Deleta o arquivo lido
                 os.remove(caminho_arquivo)
-
+                sleep(random.uniform(0.3, 2))
             browser.close()
 
         df_agrupado = pd.concat(lista_dfs)
 
-        print("Dados dos funcionarios salvos com sucesso!")
+        logger.info("Dados dos funcionarios salvos com sucesso!")
         return True, df_agrupado, linhas_removidas
 
     except Exception as e:
-        print(f"Erro ao processar os dados dos funcionarios: {e}")
+        logger.error(f"Erro ao processar os dados dos funcionarios: {e}")
         return False, pd.DataFrame(), 0
-
-
-url = 'https://corupa.atende.net/transparencia/item/relacao-funcionario-x-salario-liquido#conteudo'
-
-SUCESSO, df, linhas = baixar_dados(1,5,2013,2026, url)
-
-df.to_parquet(r'/data/funcionarios/salarios_funcionarios_corupa.parquet')
