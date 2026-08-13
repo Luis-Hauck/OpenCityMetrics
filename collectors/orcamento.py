@@ -5,8 +5,9 @@ from datetime import datetime
 from playwright_stealth import Stealth
 from time import sleep
 import random
-from processors.limpar_dados import limpar_dados_brutos
 import logging
+
+from processors.limpar_dados import limpar_dados_brutos
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +59,7 @@ def baixar_dados_orcamento(ano_inicio: int, ano_fim: int, url: str) -> tuple[boo
                     mes = datetime.now().month
                 mes_str = str(mes).zfill(2)
 
-                print(f"Selecionando ano {ano} e mês {mes_str}...")
+                logger.info(f"Selecionando ano {ano} e mês {mes_str}...")
                 frame.get_by_label("Ano").select_option(str(ano))
                 sleep(random.uniform(0.3, 0.8))
                 frame.get_by_label("Mês", exact=True).select_option(mes_str)
@@ -102,9 +103,9 @@ def baixar_dados_orcamento(ano_inicio: int, ano_fim: int, url: str) -> tuple[boo
             return False, pd.DataFrame(), 0
 
         df_agrupado = pd.concat(lista_df, ignore_index=True)
-        print("Dados de orçamento coletados com sucesso!")
+        logger.info("Dados de orçamento coletados com sucesso!")
         return True, df_agrupado, linhas_removidas
 
     except Exception as e:
-        print(f"Erro ao processar os dados de orçamento: {e}")
+        logger.error(f"Erro ao processar os dados de orçamento: {e}")
         return False, pd.DataFrame(), 0
