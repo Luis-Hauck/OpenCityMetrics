@@ -7,6 +7,7 @@ import random
 import logging
 
 from processors.limpar_dados import limpar_dados_brutos
+from utils.config import obter_caminho_arquivo
 
 logger = logging.getLogger(__name__)
 
@@ -115,7 +116,8 @@ def baixar_dados_funcionarios(mes_inicio:int, mes_fim:int, ano_inicio:int, ano_f
                 # Pega o arquivo que foi gerado
                 download = download_info.value
 
-                caminho_arquivo = rf"/data/funcionarios/salarios_funcionarios_corupa_{data.replace("/", "-")}.csv"
+                caminho_arquivo = obter_caminho_arquivo('data/funcionarios', f'salarios_funcionarios_corupa_{data.replace("/", "-")}.csv.csv')
+                os.makedirs(os.path.dirname(caminho_arquivo), exist_ok=True)
                 download.save_as(caminho_arquivo)
                 logger.info(f"Sucesso! Arquivo salvo como: {caminho_arquivo}")
                 df, linhas_ = limpar_dados_brutos(caminho_arquivo)

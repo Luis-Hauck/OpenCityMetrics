@@ -8,6 +8,7 @@ import random
 import logging
 
 from processors.limpar_dados import limpar_dados_brutos
+from utils.config import obter_caminho_arquivo
 
 logger = logging.getLogger(__name__)
 
@@ -74,9 +75,9 @@ def baixar_dados_orcamento(ano_inicio: int, ano_fim: int, url: str) -> tuple[boo
                         frame.get_by_role("button", name="Confirmar").click()
                 download = download_info.value
 
-                tmp_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data', 'orcamento'))
-                os.makedirs(tmp_dir, exist_ok=True)
-                caminho_arquivo = os.path.join(tmp_dir, f"orcamento_despesas_{ano}.csv")
+
+                caminho_arquivo = obter_caminho_arquivo('data/orcamento', f'orcamento_despesas_{ano}.csv')
+                os.makedirs(os.path.dirname(caminho_arquivo), exist_ok=True)
                 download.save_as(caminho_arquivo)
 
                 df, linhas_ = limpar_dados_brutos(caminho_arquivo)

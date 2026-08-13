@@ -4,8 +4,9 @@ import os
 from playwright_stealth import Stealth
 from time import sleep
 import random
-
 import logging
+
+from utils.config import obter_caminho_arquivo
 from processors.limpar_dados import limpar_dados_brutos
 
 logger = logging.getLogger(__name__)
@@ -74,9 +75,9 @@ def baixar_dados_obras(ano_inicio: int, ano_fim: int, url: str) -> tuple[bool, p
 
                 page.pause()
 
-                tmp_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data', 'obras'))
-                os.makedirs(tmp_dir, exist_ok=True)
-                caminho_arquivo = os.path.join(tmp_dir, f"obras_{ano}.csv")
+                caminho_arquivo = obter_caminho_arquivo('data/obras', f'obras_{ano}.csv')
+                os.makedirs(os.path.dirname(caminho_arquivo), exist_ok=True)
+                download.save_as(caminho_arquivo)
                 download.save_as(caminho_arquivo)
                 logger.info(f"Sucesso! Arquivo salvo como: {caminho_arquivo}")
 
