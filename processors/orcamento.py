@@ -1,12 +1,14 @@
 import pandas as pd
 import os
 from dotenv import load_dotenv
+import logging
+
+from utils.config import obter_caminho_arquivo
+from services.cloud_storage import fazer_upload
 
 load_dotenv()
 
 token_hospedagem = os.getenv('TOKEN_HOSPEDAGEM')
-
-from services.cloud_storage import fazer_upload
 
 def processar_orcamento(novo_df:pd.DataFrame, df_base: pd.DataFrame, token_hospedagem) -> bool:
     """
@@ -47,24 +49,31 @@ def processar_orcamento(novo_df:pd.DataFrame, df_base: pd.DataFrame, token_hospe
             subset=["Entidade","Função","Subfunção","Programa","Ação","Vínculo","Categoria Econômica","Grupo de Despesa","Modalidade","ano"],
             keep='last')
 
-
-        caminho_local = df_final.to_json('data/orcamento/orcamento_corupa.json',orient='split', force_ascii=False, index=False)
-        fazer_upload(
+        
+        # Salva em JSON num caminho concreto e faz upload
+        caminho_local = obter_caminho_arquivo('data/orcamento','orcamento_corupa.json')
+        os.makedirs(os.path.dirname(caminho_local), exist_ok=True)
+        df_final.to_json(caminho_local, orient='split', force_ascii=False, index=False, date_format='iso')
+        sucesso = fazer_upload(
             arquivo=caminho_local,
             prefixo='json',
             expire=90,
-            nome_arquivo='OrcamentoCorupa1.json',
+            nome_arquivo='OrcamentoCorupa1',
             content_type='application/json; charset=Latin1',
             token_hospedagem=token_hospedagem
         )
 
+        if not sucesso:
+            logging.warning("Falha ao fazer upload do arquivo JSON do orçamento.")
+            return False
+
         os.remove(caminho_local)
 
-        print("Dados do orçamento salvos com sucesso!")
+        logging.info("Dados do orçamento salvos com sucesso!")
 
         return True
     except Exception as e:
-        print(f"Erro ao processar os dados dos funcionarios: {e}")
+        logging.error(f"Erro ao processar os dados dos funcionarios: {e}")
         return False
 
 def tratar_dados(df) -> pd.DataFrame():
@@ -77,6 +86,7 @@ def tratar_dados(df) -> pd.DataFrame():
     """
     try:
         if df is None or len(df) == 0:
+            logging.info(f'DataFrame com dados do orçamento está vazio.')
             return pd.DataFrame()
 
         # Renomeia colunas conhecidas para o padrão usado no dashboard
@@ -97,5 +107,5 @@ def tratar_dados(df) -> pd.DataFrame():
         return df
 
     except Exception as e:
-        print(f"Erro ao tratar os dados do orçamento: {e}")
+        logging.error(f"Erro ao tratar os dados do orçamento: {e}")
         return pd.DataFrame()
