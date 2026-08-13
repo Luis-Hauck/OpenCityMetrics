@@ -22,7 +22,8 @@ data_ultima_atualizacao = config['SC']['Corupa']['base_dados']['obras']['ultima_
 try:
     sucesso, df_obras = obter_dados(url)
 except Exception as e:
-    st.error(f"Erro ao carregar os dados tente voltar depois")
+    st.warning(f"Erro ao carregar os dados tente voltar depois")
+    st.stop()
     logging.error(f"Erro ao carregar os dados tente voltar depois: {e}")
 
 df_obras['Valor Total'] = df_obras['Valor Total'].astype(float).apply(formatar_reais)

@@ -26,6 +26,7 @@ dados_ausentes = dados_orcamento['dados_ausentes']
 
 if not sucesso:
     st.warning('Falha ao carregar os dados, tente novamente mais tarde')
+    st.stop()
 
 st.title('Despesas com funcionários')
 
@@ -291,9 +292,11 @@ except Exception as e:
     st.error(f"Erro ao carregar os dados tente voltar depois")
     logging.error(f"Erro ao carregar os dados tente voltar depois: {e}")
 
-st.info(f"⚠️ **Nota de Transparência:** Aproximadamente {dados_ausentes} registros fornecidos pela prefeitura continham erros de "
-        "formatação (linhas corrompidas) e não puderam ser lidos."
-        "ligeiramente maior do que o exibido aqui.", icon="ℹ️")
+if dados_ausentes > 0:
+    st.info(f"⚠️ **Nota de Transparência:** Aproximadamente {dados_ausentes} registros fornecidos pela prefeitura continham erros de "
+            "formatação (linhas corrompidas) e não puderam ser lidos."
+            , icon="ℹ️")
+
 st.info(f'Última coleta dos dados: {data_ultima_atualizacao}')
 
 
