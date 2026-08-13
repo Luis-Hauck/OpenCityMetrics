@@ -1,8 +1,12 @@
 import pandas as pd
 import os
 from dotenv import load_dotenv
+import logging
+
+from utils.config import obter_caminho_arquivo
 
 load_dotenv()
+logger = logging.getLogger(__name__)
 
 token_hospedagem = os.getenv('TOKEN_HOSPEDAGEM')
 
@@ -44,27 +48,34 @@ def processar_patrimonio(novo_df:pd.DataFrame, df_base: pd.DataFrame, token_hosp
         # O parâmetro keep='last' garante que, se houver conflito, o dado que veio
         # do df_novo (o que acabou de ser baixado) vença e mate o dado velho.
         df_final = df_final.drop_duplicates(
-            subset=['Entidade', 'Código', 'Valor Contábil'],
+            subset=['Unidade Gestora', 'Código', 'Valor Contábil'],
             keep='last')
 
-
-        caminho_local = df_final.to_json('data/orcamento/orcamento_corupa.json',orient='split', force_ascii=False, index=False)
-        fazer_upload(
+        
+        # Salva em JSON num caminho concreto e faz upload
+        caminho_local = obter_caminho_arquivo('data/patrimonio', 'patrimonio_corupa.json')
+        os.makedirs(os.path.dirname(caminho_local), exist_ok=True)
+        df_final.to_json(caminho_local, orient='split', force_ascii=False, index=False, date_format='iso')
+        sucesso = fazer_upload(
             arquivo=caminho_local,
             prefixo='json',
             expire=90,
-            nome_arquivo='OrçamentoCorupa.json',
-            content_type='json',
+            nome_arquivo='PatrimonioCorupa',
+            content_type='application/json; charset=Latin1',
             token_hospedagem=token_hospedagem
         )
 
+        if not sucesso:
+            logger.warning("Falha ao fazer upload do arquivo JSON de patrimônio.")
+            return False
+
         os.remove(caminho_local)
 
-        print("Dados dos funcionarios salvos com sucesso!")
+        logger.info("Dados do patrimônio salvos com sucesso!")
 
         return True
     except Exception as e:
-        print(f"Erro ao processar os dados dos funcionarios: {e}")
+        logger.error(f"Erro ao processar os dados dos patrimonio: {e}")
         return False
 
 def tratar_dados(df) -> pd.DataFrame():
@@ -101,5 +112,5 @@ def tratar_dados(df) -> pd.DataFrame():
         return df
 
     except Exception as e:
-        print(f"Erro ao tratar os dados: {e}")
+        logger.info(f"Erro ao tratar os dados: {e}")
         return pd.DataFrame()
