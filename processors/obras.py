@@ -1,12 +1,13 @@
 import pandas as pd
 import os
 from dotenv import load_dotenv
+import logging
 
+from services.cloud_storage import fazer_upload
+from utils.config import obter_caminho_arquivo
 load_dotenv()
 
 token_hospedagem = os.getenv('TOKEN_HOSPEDAGEM')
-
-from services.cloud_storage import fazer_upload
 
 def processar_obras(novo_df:pd.DataFrame, df_base: pd.DataFrame, token_hospedagem) -> bool:
     """
@@ -48,23 +49,31 @@ def processar_obras(novo_df:pd.DataFrame, df_base: pd.DataFrame, token_hospedage
             keep='last')
 
 
-        caminho_local = df_final.to_json('data/obras/obras_corupa.json',orient='split', force_ascii=False, index=False)
-        fazer_upload(
+        # Salva em JSON num caminho concreto e faz upload
+        caminho_local = obter_caminho_arquivo('data/obras', 'obras_corupa.json')
+        os.makedirs(os.path.dirname(caminho_local), exist_ok=True)
+        df_final.to_json(caminho_local, orient='split', force_ascii=False, index=False, date_format='iso')
+
+        sucesso = fazer_upload(
             arquivo=caminho_local,
             prefixo='json',
             expire=90,
-            nome_arquivo='ObrasCorupa.json',
-            content_type='json',
+            nome_arquivo='ObrasCorupa',
+            content_type='application/json; charset=Latin1',
             token_hospedagem=token_hospedagem
         )
 
+        if not sucesso:
+            logging.warning("Falha ao fazer upload do arquivo JSON de obras.")
+            return False
+
         os.remove(caminho_local)
 
-        print("Dados dos funcionarios salvos com sucesso!")
+        logging.info("Dados das obras salvos com sucesso!")
 
         return True
     except Exception as e:
-        print(f"Erro ao processar os dados dos funcionarios: {e}")
+        logging.warning(f"Erro ao processar os dados dos funcionarios: {e}")
         return False
 
 def limpar_dados(df_obras) -> pd.DataFrame():
