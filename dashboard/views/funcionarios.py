@@ -170,7 +170,7 @@ try:
             yaxis_title="Número de Servidores"
         )
 
-        st.plotly_chart(fig_dist, theme="streamlit", use_container_width=True)
+        st.plotly_chart(fig_dist, theme="streamlit", width='content')
 
 
 
@@ -198,7 +198,7 @@ try:
                      }
                      )
 
-        st.plotly_chart(fig, theme="streamlit", use_container_width=True)
+        st.plotly_chart(fig, theme="streamlit", width='content')
 
     with tab3:
 
@@ -265,7 +265,7 @@ try:
             }
         )
 
-        st.plotly_chart(fig_bar_cargos, theme="streamlit", use_container_width=True)
+        st.plotly_chart(fig_bar_cargos, theme="streamlit", width='content')
 
         # tabela com os % de gastos
         gasto_total_do_ano = df_ano_tab3['Proventos'].sum()
@@ -284,7 +284,7 @@ try:
                 "pct_gasto": st.column_config.NumberColumn("% do Orçamento", format="%.2f%%")
             },
             hide_index=True,
-            use_container_width=True
+            width='content'
         )
         st.caption("ℹ️ **Nota Metodológica:** A soma da coluna 'Nº de Servidores' pode ser superior ao total de indivíduos físicos únicos contratados no ano. Isso ocorre porque um mesmo servidor pode ter migrado de regime durante o período (ex: encerramento de contrato temporário seguido de nomeação em concurso público), sendo contabilizado em ambas as categorias que ocupou.")
 

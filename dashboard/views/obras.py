@@ -61,7 +61,7 @@ try:
             hide_index=True,
             selection_mode='single-row',
             on_select='rerun',
-            use_container_width=True
+            width='content'
         )
 
         linha_selecionada = evento.selection.rows
@@ -74,7 +74,7 @@ try:
             st.write('🔍 Ficha Completa da Obra')
             st.dataframe(
                 df_detalhado,
-                use_container_width=True
+                width='stretch'
             )
 
     with tab2:
@@ -87,7 +87,7 @@ try:
             hide_index=True,
             selection_mode='single-row',
             on_select='rerun',
-            use_container_width=True
+            width='content'
         )
 
         linha_selecionada2 = evento2.selection.rows
@@ -100,7 +100,7 @@ try:
             st.write('🔍 Ficha Completa da Obra')
             st.dataframe(
                 df_detalhado2,
-                use_container_width=True
+                width='stretch'
             )
 except Exception as e:
     st.error(f"Erro ao carregar os dados tente voltar depois")

@@ -95,7 +95,7 @@ try:
 
         evento2 = st.dataframe(df_veiculos_visivel,
                               hide_index=True,
-                              use_container_width=True,
+                              width='content',
                               selection_mode='single-row',
                               on_select='rerun',
 
@@ -110,7 +110,7 @@ try:
             st.write('🔍 Ficha Completa')
             st.dataframe(
                 df_detalhado2,
-                use_container_width=True
+                width='stretch'
             )
     with tab3:
         st.write('Busca de itens pertencentes a prefeitura')
@@ -124,7 +124,7 @@ try:
 
         evento3 = st.dataframe(df_filtrado,
                                hide_index=True,
-                               use_container_width=True,
+                               width='content',
                                selection_mode='single-row',
                                on_select='rerun',
                                )
@@ -139,7 +139,7 @@ try:
             st.write('🔍 Ficha Completa')
             st.dataframe(
                 df_detalhado3,
-                use_container_width=True
+                width='stretch'
             )
 except Exception as e:
     st.error(f"Erro ao carregar os dados tente voltar depois")

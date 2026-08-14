@@ -61,7 +61,7 @@ try:
                      title='Ranking das Funções com Maiores Gastos',
                      )
 
-        st.plotly_chart(fig, theme="streamlit", use_container_width=True)
+        st.plotly_chart(fig, theme="streamlit", width='content')
 
 
         # ranking dos maiores gastos
@@ -117,7 +117,7 @@ try:
 
         fig2.update_layout(yaxis={'categoryorder': 'total ascending'})
 
-        st.plotly_chart(fig2, theme="streamlit", use_container_width=True)
+        st.plotly_chart(fig2, theme="streamlit", width='content')
 
         lista_funcoes = sorted(dados_ano_selecionado['Função'].unique())
 
@@ -132,7 +132,7 @@ try:
                       title=f'Ranking das Subfunções Realacionadas a {funcao_selecioanda}',
                       )
 
-        st.plotly_chart(fig3, theme="streamlit", use_container_width=True)
+        st.plotly_chart(fig3, theme="streamlit", width='content')
         with st.expander("Ver detalhamento profundo (Subfunções, Programas e Ações)"):
             lista_subfuncoes = sorted(dados_funcao_slecioanda['Subfunção'].unique())
             subfuncao_selecioanda = st.selectbox('Selecione a Subfunção', lista_subfuncoes)
@@ -146,7 +146,7 @@ try:
                           title=f'Programa Realacionadas a {funcao_selecioanda}',
                           )
 
-            st.plotly_chart(fig4, theme="streamlit", use_container_width=True)
+            st.plotly_chart(fig4, theme="streamlit", width='content')
 
             lista_acoes = sorted(dados_funcao_slecioanda['Ação'].unique())
             acao_selecioanda = st.selectbox('Selecione a Ação', lista_acoes)
@@ -161,7 +161,7 @@ try:
                           title=f'Ações Realacionadas a {funcao_selecioanda}',
                           )
             fig5.update_layout(xaxis={'categoryorder':'total descending'})
-            st.plotly_chart(fig5, theme="streamlit", use_container_width=True)
+            st.plotly_chart(fig5, theme="streamlit", width='content')
 except Exception as e:
     st.error(f"Erro ao carregar os dados tente voltar depois")
     logging.error(f"Erro ao carregar os dados: {e}")
