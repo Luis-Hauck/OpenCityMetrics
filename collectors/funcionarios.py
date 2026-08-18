@@ -61,7 +61,7 @@ def baixar_dados_funcionarios(mes_inicio:int, mes_fim:int, ano_inicio:int, ano_f
 
         with sync_playwright() as p:
             browser = p.chromium.launch(
-                headless=False,
+                headless=True,
                 args=[
                     "--disable-blink-features=AutomationControlled",  #
                     "--disable-infobars",

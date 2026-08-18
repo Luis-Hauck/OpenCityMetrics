@@ -8,6 +8,7 @@ import logging
 
 from utils.config import obter_caminho_arquivo
 from processors.limpar_dados import limpar_dados_brutos
+from processors.obras import limpar_dados
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +33,7 @@ def baixar_dados_obras(ano_inicio: int, ano_fim: int, url: str) -> tuple[bool, p
     try:
         with sync_playwright() as p:
             browser = p.chromium.launch(
-                headless=False,
+                headless=True,
                 args=[
                     "--disable-blink-features=AutomationControlled",
                     "--disable-infobars",
@@ -40,7 +41,9 @@ def baixar_dados_obras(ano_inicio: int, ano_fim: int, url: str) -> tuple[bool, p
                     "--disable-dev-shm-usage",
                 ],
             )
-            context = browser.new_context(locale="pt-BR", timezone_id="America/Sao_Paulo")
+            context = browser.new_context(locale="pt-BR",
+                                          timezone_id="America/Sao_Paulo",
+                                          )
             stealth = Stealth()
             stealth.apply_stealth_sync(context)
             page = context.new_page()
@@ -48,7 +51,7 @@ def baixar_dados_obras(ano_inicio: int, ano_fim: int, url: str) -> tuple[bool, p
 
             logger.info("Acessando o portal de obras...")
             page.goto(url)
-            sleep(random.uniform(3.0, 5.0))
+            sleep(random.uniform(3.0, 7.0))
 
             # Tenta rejeitar cookies se existir o botão
             try:
@@ -57,15 +60,15 @@ def baixar_dados_obras(ano_inicio: int, ano_fim: int, url: str) -> tuple[bool, p
                 pass
 
             frame = page.locator('iframe[title="Item"]').content_frame
-
+            sleep(random.uniform(1, 4))
             # ETAPA 1
             #  baixar CSVs por ano
             for ano in range(ano_inicio, ano_fim + 1):
-                print(f"Selecionando o ano: {ano}")
+                logger.info(f"Selecionando o ano: {ano}")
                 frame.get_by_label("Ano", exact=True).select_option(str(ano))
-                sleep(random.uniform(0.6, 1.4))
+                sleep(random.uniform(0.6, 2))
 
-                print("Iniciando o download de Dados Abertos...")
+                logger.info("Iniciando o download de Dados Abertos...")
                 page.get_by_role("button", name="Dados Abertos").click()
 
                 with page.expect_download() as download_info:
@@ -83,6 +86,7 @@ def baixar_dados_obras(ano_inicio: int, ano_fim: int, url: str) -> tuple[bool, p
 
                 # Lê e limpa o CSV baixado (padrão AtendeNet é ; e Latin1)
                 df, linhas_ = limpar_dados_brutos(caminho_arquivo)
+                df = limpar_dados(df)
                 lista_dfs.append(df)
                 linhas_removidas += linhas_
 
@@ -157,7 +161,9 @@ def baixar_dados_obras(ano_inicio: int, ano_fim: int, url: str) -> tuple[bool, p
                     frame.locator("select[aria-label='Campo de Filtro'][aria-description='campo lista']").first.select_option("numero")
 
                     # Preenche o número da obra e consulta
-                    frame.get_by_role("textbox", name="Primeiro valor para o filtro").fill(str(int(numero_da_obra)))
+                    campo_ano_obra = frame.get_by_role("textbox", name="Primeiro valor para o filtro")
+                    campo_ano_obra.clear()
+                    campo_ano_obra.press_sequentially((str(int(numero_da_obra))), delay=random.uniform(0.1, 0.3))
                     frame.get_by_text("Consultar", exact=True).click()
                     sleep(random.uniform(0.9, 1.7))
 

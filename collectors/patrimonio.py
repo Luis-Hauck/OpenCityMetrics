@@ -25,7 +25,7 @@ def baixar_dados_patrimonio(url: str) -> tuple[bool, pd.DataFrame, int]:
     try:
         with sync_playwright() as p:
             browser = p.chromium.launch(
-                headless=False,
+                headless=True,
                 args=[
                     "--disable-blink-features=AutomationControlled",
                     "--disable-infobars",

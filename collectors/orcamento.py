@@ -29,7 +29,7 @@ def baixar_dados_orcamento(ano_inicio: int, ano_fim: int, url: str) -> tuple[boo
     try:
         with sync_playwright() as p:
             browser = p.chromium.launch(
-                headless=False,
+                headless=True,
                 args=[
                     "--disable-blink-features=AutomationControlled",
                     "--disable-infobars",
