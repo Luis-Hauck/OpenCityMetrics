@@ -56,6 +56,7 @@ def processar_funcionarios(novo_df:pd.DataFrame, df_base: pd.DataFrame, token_ho
         df_final['data'] = pd.to_datetime(
             df_final['data'],
             dayfirst = True,
+            format = 'mixed',
             errors = 'raise',
             )
 

@@ -18,7 +18,8 @@ config = load_config(caminho_config)
 # Carrega o dataframe base
 url = os.getenv('ARQUIVO_BASE_DESPESAS_FUNCIONARIOS_CORUPA')
 sucesso, df = obter_dados(url)
-df['data'] = pd.to_datetime(df['data'])
+# REMOVER ASSIM QUE A COLETA ESTIVER DISPONIVEL
+df['data'] = pd.to_datetime(df['data'], unit='ms', errors='coerce')
 
 dados_orcamento = config['SC']['Corupa']['base_dados']['funcionarios']
 data_ultima_atualizacao = dados_orcamento['ultima_atualizacao']
