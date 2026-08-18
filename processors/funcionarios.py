@@ -68,7 +68,7 @@ def processar_funcionarios(novo_df:pd.DataFrame, df_base: pd.DataFrame, token_ho
                          orient='split',
                          force_ascii=False,
                          index=False,
-                         date_format='iso')
+                         )
 
         # Faz o upload do arquivo salvo
         sucesso = fazer_upload(
