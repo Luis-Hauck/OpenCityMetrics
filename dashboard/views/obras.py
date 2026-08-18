@@ -37,6 +37,7 @@ tab1, tab2 = st.tabs(['Obras em Andamento', 'Demais obras'])
 try:
     with tab1:
         df_obras_concluidas_filtrado = df_obras[df_obras['Situação'] == 'Em Andamento']
+        df_obras_concluidas_filtrado['% de execução financeira'] = df_obras_concluidas_filtrado['% de execução financeira'].str.replace(',', '.').astype(float)
         colunas_visiveis_obras_concluidas = ["Descrição", "Percentual Conclusão (%)", "% de execução financeira", "Valor Total"]
         df_visivel_obras_concluidas = df_obras_concluidas_filtrado[colunas_visiveis_obras_concluidas]
 
