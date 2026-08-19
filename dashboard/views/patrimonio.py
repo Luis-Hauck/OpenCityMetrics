@@ -31,10 +31,10 @@ tab1, tab2, tab3 = st.tabs(['Visão geral', 'Frota de Veículos', 'Busca'])
 
 try:
     with tab1:
-        patrimonio_disponivel = df_patrimonio[df_patrimonio["Status"] != 'Insdisponível']
+        patrimonio_disponivel = df_patrimonio[df_patrimonio["Status"] == 'Disponível']
         valor_patrimonial = patrimonio_disponivel["Valor Contábil"].sum()
         valor_patrimonial_formatado = f"R$ {valor_patrimonial:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-        st.metric('Valor Patrimonial Estimado', f'{valor_patrimonial_formatado}')
+        st.metric('Valor Patrimonial Estimado Disponível', f'{valor_patrimonial_formatado}')
 
         st.subheader('Top 20 Bens Mais Valiosos')
         df_top_20 = patrimonio_disponivel.nlargest(20, 'Valor Contábil')
