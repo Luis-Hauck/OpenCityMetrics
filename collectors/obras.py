@@ -1,5 +1,5 @@
 from datetime import datetime
-
+import asyncio
 from playwright.sync_api import sync_playwright
 import pandas as pd
 import os
@@ -50,7 +50,6 @@ def baixar_dados_obras(ano_inicio: int, ano_fim: int, url: str) -> tuple[bool, p
             stealth.apply_stealth_sync(context)
             page = context.new_page()
             page.set_default_timeout(60000)
-
             logger.info("Acessando o portal de obras...")
             page.goto(url)
             sleep(random.uniform(3.0, 7.0))
@@ -66,39 +65,46 @@ def baixar_dados_obras(ano_inicio: int, ano_fim: int, url: str) -> tuple[bool, p
             # ETAPA 1
             #  baixar CSVs por ano
             for ano in range(ano_inicio, ano_fim + 1):
-                logger.info(f"Selecionando o ano: {ano}")
-                frame.get_by_label("Ano", exact=True).select_option(str(ano))
-                sleep(random.uniform(0.6, 2))
-
-                logger.info("Iniciando o download de Dados Abertos...")
-                page.get_by_role("button", name="Dados Abertos").click()
-
-                with page.expect_download() as download_info:
-                    with page.expect_popup():
-                        frame.get_by_role("button", name="Confirmar").click()
-                download = download_info.value
-
-                page.pause()
-
-                caminho_arquivo = obter_caminho_arquivo('data/obras', f'obras_{ano}.csv')
-                os.makedirs(os.path.dirname(caminho_arquivo), exist_ok=True)
-                download.save_as(caminho_arquivo)
-                download.save_as(caminho_arquivo)
-                logger.info(f"Sucesso! Arquivo salvo como: {caminho_arquivo}")
-
-                # Lê e limpa o CSV baixado (padrão AtendeNet é ; e Latin1)
-                df, linhas_ = limpar_dados_brutos(caminho_arquivo)
-                df = limpar_dados(df)
-                lista_dfs.append(df)
-                linhas_removidas += linhas_
-
-                # Remove arquivo temporário
                 try:
-                    os.remove(caminho_arquivo)
-                except Exception:
-                    pass
+                    logger.info(f"Selecionando o ano: {ano}")
+                    frame.get_by_label("Ano", exact=True).select_option(str(ano))
+                    sleep(random.uniform(0.6, 2))
 
-                sleep(random.uniform(0.5, 1.5))
+                    logger.info("Iniciando o download de Dados Abertos...")
+                    page.get_by_role("button", name="Dados Abertos").click()
+
+                    with page.expect_download(timeout=120000) as download_info:
+                        frame.get_by_role("button", name="Confirmar").click()
+                    download = download_info.value
+
+                    caminho_arquivo = obter_caminho_arquivo('data/obras', f'obras_{ano}.csv')
+                    os.makedirs(os.path.dirname(caminho_arquivo), exist_ok=True)
+                    download.save_as(caminho_arquivo)
+                    logger.info(f"Sucesso! Arquivo salvo como: {caminho_arquivo}")
+
+                    # Lê e limpa o CSV baixado (padrão AtendeNet é ; e Latin1)
+                    df, linhas_ = limpar_dados_brutos(caminho_arquivo)
+                    df = limpar_dados(df)
+                    lista_dfs.append(df)
+                    linhas_removidas += linhas_
+
+                    # Remove arquivo temporário
+                    try:
+                        os.remove(caminho_arquivo)
+                    except Exception:
+                        pass
+
+                    sleep(random.uniform(0.5, 1.5))
+                except Exception as erro_raspagem:
+                    try:
+                        agora = datetime.now().strftime("%Y%m%d_%H%M%S")
+                        caminho_foto = obter_caminho_arquivo("logs", f"erro_obras_{agora}.png")
+                        page.screenshot(path=str(caminho_foto), full_page=True)
+                        logger.error(f"ERRO CAPTURADO! Screenshot salvo em: {caminho_foto}")
+                    except Exception as erro_foto:
+                        logger.error(f"Não foi possível tirar o screenshot: {erro_foto}")
+                    browser.close()
+                    return False, pd.DataFrame(), 0
 
             # Se nada foi baixado, aborta
             if not lista_dfs:
@@ -209,12 +215,5 @@ def baixar_dados_obras(ano_inicio: int, ano_fim: int, url: str) -> tuple[bool, p
         return True, df_agrupado, linhas_removidas
 
     except Exception as e:
-        try:
-            # Descobre a raiz do projeto e salva na pasta logs
-            caminho_foto = obter_caminho_arquivo( "logs", f"erro_tela{datetime.now()}.png")
-            page.screenshot(path=str(caminho_foto), full_page=True)
-            logger.error(f"Erro na raspagem. Screenshot salvo em: {caminho_foto}")
-        except Exception as erro_foto:
-            logger.error(f"Não foi possível tirar o screenshot.{erro_foto}")
         logger.warning(f"Erro ao processar os dados de obras: {e}")
         return False, pd.DataFrame(), 0

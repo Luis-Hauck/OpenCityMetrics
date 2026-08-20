@@ -39,52 +39,63 @@ def baixar_dados_patrimonio(url: str) -> tuple[bool, pd.DataFrame, int]:
             page = context.new_page()
             page.set_default_timeout(60000)
 
-            logger.info("Acessando o portal de patrimônio...")
-            page.goto(url)
-            sleep(random.uniform(2.5, 4.5))
-
             try:
-                page.get_by_role("button", name="Rejeitar não necessários").click(force=True)
-            except Exception:
-                pass
+                logger.info("Acessando o portal de patrimônio...")
+                page.goto(url)
+                sleep(random.uniform(2.5, 4.5))
 
-            frame = page.locator('iframe[title="Item"]').content_frame
-
-            # Executa consulta padrão (sem ano corrente)
-            try:
-                frame.get_by_label("Ano da Aquisição").click()
-                # Tenta desmarcar 2026 se existir
                 try:
-                    frame.get_by_role("checkbox", name=f"{datetime.today().year}").uncheck()
+                    page.get_by_role("button", name="Rejeitar não necessários").click(force=True)
                 except Exception:
                     pass
-            except Exception:
-                pass
 
-            try:
-                frame.get_by_text("Consultar", exact=True).click()
-            except Exception:
-                pass
+                frame = page.locator('iframe[title="Item"]').content_frame
 
-            sleep(random.uniform(0.6, 1.2))
-            page.get_by_role("button", name="Dados Abertos").click()
+                # Executa consulta padrão (sem ano corrente)
+                try:
+                    frame.get_by_label("Ano da Aquisição").click()
+                    # Tenta desmarcar o ano corrente se existir
+                    try:
+                        frame.get_by_role("checkbox", name=f"{datetime.today().year}").uncheck()
+                    except Exception:
+                        pass
+                except Exception:
+                    pass
 
-            with page.expect_download() as download_info:
-                frame.get_by_role("button", name="Confirmar").click()
-            download = download_info.value
+                try:
+                    frame.get_by_text("Consultar", exact=True).click()
+                except Exception:
+                    pass
 
-            caminho_arquivo = obter_caminho_arquivo('data/patrimonio', f'patrimonio_bens.csv')
-            os.makedirs(os.path.dirname(caminho_arquivo), exist_ok=True)
-            download.save_as(caminho_arquivo)
+                sleep(random.uniform(0.6, 1.2))
+                page.get_by_role("button", name="Dados Abertos").click()
 
-            # Leitura e limpeza do CSV baixado
-            df, linhas_removidas = limpar_dados_brutos(caminho_arquivo)
+                with page.expect_download(timeout=120000) as download_info:
+                    frame.get_by_role("button", name="Confirmar").click()
+                download = download_info.value
 
-            # Remove arquivo temporário
-            try:
-                os.remove(caminho_arquivo)
-            except Exception:
-                pass
+                caminho_arquivo = obter_caminho_arquivo('data/patrimonio', f'patrimonio_bens.csv')
+                os.makedirs(os.path.dirname(caminho_arquivo), exist_ok=True)
+                download.save_as(caminho_arquivo)
+
+                # Leitura e limpeza do CSV baixado
+                df, linhas_removidas = limpar_dados_brutos(caminho_arquivo)
+
+                # Remove arquivo temporário
+                try:
+                    os.remove(caminho_arquivo)
+                except Exception:
+                    pass
+
+            except Exception as erro_raspagem:
+                try:
+                    agora = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    caminho_foto = obter_caminho_arquivo("logs", f"erro_patrimonio_{agora}.png")
+                    page.screenshot(path=str(caminho_foto), full_page=True)
+                    logger.error(f"ERRO CAPTURADO! Screenshot salvo em: {caminho_foto}")
+                except Exception as erro_foto:
+                    logger.error(f"Não foi possível tirar o screenshot: {erro_foto}")
+                raise erro_raspagem
 
             browser.close()
 
@@ -92,12 +103,5 @@ def baixar_dados_patrimonio(url: str) -> tuple[bool, pd.DataFrame, int]:
         return True, df, linhas_removidas
 
     except Exception as e:
-        try:
-            # Descobre a raiz do projeto e salva na pasta logs
-            caminho_foto = obter_caminho_arquivo( "logs", f"erro_tela{datetime.now()}.png")
-            page.screenshot(path=str(caminho_foto), full_page=True)
-            logger.error(f"Erro na raspagem. Screenshot salvo em: {caminho_foto}")
-        except Exception as erro_foto:
-            logger.error(f"Não foi possível tirar o screenshot.{erro_foto}")
-        logger.error(f"Erro ao processar os dados de orçamento: {e}")
+        logger.error(f"Erro ao processar os dados de patrimônio: {e}")
         return False, pd.DataFrame(), 0

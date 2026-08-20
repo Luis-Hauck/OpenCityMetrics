@@ -1,5 +1,5 @@
 from datetime import datetime
-
+import asyncio
 from playwright.sync_api import sync_playwright
 import pandas as pd
 import os
@@ -60,7 +60,7 @@ def baixar_dados_funcionarios(mes_inicio:int, mes_fim:int, ano_inicio:int, ano_f
     linhas_removidas = 0
 
     try:
-
+        asyncio.set_event_loop(asyncio.new_event_loop())
         with sync_playwright() as p:
             browser = p.chromium.launch(
                 headless=True,
@@ -87,50 +87,68 @@ def baixar_dados_funcionarios(mes_inicio:int, mes_fim:int, ano_inicio:int, ano_f
 
 
             frame = page.locator('iframe[title="Item"]').content_frame
-
-            logger.info("Acessando a página dos funcionários")
-            page.goto(url)
-
-            sleep(random.uniform(4.5, 7.2))
-
-            # Tenta rejeitar cookies se existir o botão
             try:
-                page.get_by_role("button", name="Rejeitar não necessários").click(force=True)
-            except Exception:
-                pass
+                logger.info("Acessando a página dos funcionários")
+                page.goto(url)
+
+                sleep(random.uniform(4.5, 7.2))
+
+                # Tenta rejeitar cookies se existir o botão
+                try:
+                    page.get_by_role("button", name="Rejeitar não necessários").click(force=True)
+                except Exception:
+                    pass
 
 
-            for data in gerar_lista_meses(mes_inicio, mes_fim, ano_inicio, ano_fim):
-                logger.info(f'Selecioando a data: {data}')
+                for data in gerar_lista_meses(mes_inicio, mes_fim, ano_inicio, ano_fim):
+                    logger.info(f'Selecioando a data: {data}')
 
-                frame.get_by_label("Mês/Ano").select_option(label=data)
+                    frame.get_by_label("Mês/Ano").select_option(label=data)
 
-                logger.info("Iniciando o download...")
+                    logger.info("Iniciando o download...")
 
 
-                page.get_by_role("button", name="Dados Abertos").click()
+                    page.get_by_role("button", name="Dados Abertos").click(force=True)
 
-                # O Playwright "escuta" o evento de download antes mesmo de você clicar
-                with page.expect_download() as download_info:
-                    with page.expect_popup() as page1_info:
-                        frame.get_by_role("button", name="Confirmar").click()
+                    # O Playwright "escuta" o evento de download antes mesmo de você clicar
+                    with page.expect_download() as download_info:
+                        with page.expect_popup() as page1_info:
+                            frame.get_by_role("button", name="Confirmar").click(force=True)
 
-                # Pega o arquivo que foi gerado
-                download = download_info.value
+                    # Pega o arquivo que foi gerado
+                    download = download_info.value
 
-                caminho_arquivo = obter_caminho_arquivo('data/funcionarios', f'salarios_funcionarios_corupa_{data.replace("/", "-")}.csv.csv')
-                os.makedirs(os.path.dirname(caminho_arquivo), exist_ok=True)
-                download.save_as(caminho_arquivo)
-                logger.info(f"Sucesso! Arquivo salvo como: {caminho_arquivo}")
-                df, linhas_ = limpar_dados_brutos(caminho_arquivo)
-                df['data'] = f'01/{data}'
-                lista_dfs.append(df)
-                linhas_removidas += linhas_
+                    caminho_arquivo = obter_caminho_arquivo('data/funcionarios', f'salarios_funcionarios_corupa_{data.replace("/", "-")}.csv.csv')
+                    os.makedirs(os.path.dirname(caminho_arquivo), exist_ok=True)
+                    download.save_as(caminho_arquivo)
+                    logger.info(f"Sucesso! Arquivo salvo como: {caminho_arquivo}")
+                    df, linhas_ = limpar_dados_brutos(caminho_arquivo)
+                    df['data'] = f'01/{data}'
+                    lista_dfs.append(df)
+                    linhas_removidas += linhas_
 
-                #Deleta o arquivo lido
-                os.remove(caminho_arquivo)
-                sleep(random.uniform(0.3, 2))
+                    #Deleta o arquivo lido
+                    os.remove(caminho_arquivo)
+                    sleep(random.uniform(0.3, 2))
+
+            except Exception as erro_raspagem:
+                try:
+                    # Formata a hora sem usar os dois pontos ":"
+                    agora = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    caminho_foto = obter_caminho_arquivo("logs", f"erro_funcionarios_{agora}.png")
+
+                    page.screenshot(path=str(caminho_foto), full_page=True)
+                    logger.error(f"ERRO CAPTURADO! Screenshot salvo em: {caminho_foto}")
+                except Exception as erro_foto:
+                    logger.error(f"Não foi possível tirar o screenshot: {erro_foto}")
+
+                raise erro_raspagem
+
             browser.close()
+
+        if not lista_dfs:
+            logger.warning("Nenhum dado foi baixado. Retornando vazio.")
+            return False, pd.DataFrame(), 0
 
         df_agrupado = pd.concat(lista_dfs)
 
@@ -138,12 +156,5 @@ def baixar_dados_funcionarios(mes_inicio:int, mes_fim:int, ano_inicio:int, ano_f
         return True, df_agrupado, linhas_removidas
 
     except Exception as e:
-        try:
-            # Descobre a raiz do projeto e salva na pasta logs
-            caminho_foto = obter_caminho_arquivo( "logs", f"erro_tela{datetime.now()}.png")
-            page.screenshot(path=str(caminho_foto), full_page=True)
-            logger.error(f"Erro na raspagem. Screenshot salvo em: {caminho_foto}")
-        except Exception as erro_foto:
-            logger.error(f"Não foi possível tirar o screenshot.{erro_foto}")
         logger.error(f"Erro ao processar os dados dos funcionarios: {e}")
         return False, pd.DataFrame(), 0

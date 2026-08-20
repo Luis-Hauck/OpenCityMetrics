@@ -47,63 +47,73 @@ def baixar_dados_orcamento(ano_inicio: int, ano_fim: int, url: str) -> tuple[boo
             page = context.new_page()
             page.set_default_timeout(60000)
 
-            logger.info("Acessando o portal de execução do orçamento da despesa...")
-            page.goto(url)
-            sleep(random.uniform(2.5, 4.5))
-
             try:
-                page.get_by_role("button", name="Rejeitar não necessários").click(force=True)
-            except Exception:
-                pass
+                logger.info("Acessando o portal de execução do orçamento da despesa...")
+                page.goto(url)
+                sleep(random.uniform(2.5, 4.5))
 
-            frame = page.locator('iframe[title="Item"]').content_frame
-            if frame is None:
-                logger.error("Nenhum frame encontrado no iframe.")
-                return False, pd.DataFrame(), 0
-
-            for ano in range(ano_inicio, ano_fim + 1):
-                mes = 12
-                if ano == datetime.now().year:
-                    mes = datetime.now().month
-                mes_str = str(mes).zfill(2)
-
-                logger.info(f"Selecionando ano {ano} e mês {mes_str}...")
-                frame.get_by_label("Ano").select_option(str(ano))
-                sleep(random.uniform(0.3, 0.8))
-                frame.get_by_label("Mês", exact=True).select_option(mes_str)
                 try:
-                    frame.get_by_text("Consultar").click()
+                    page.get_by_role("button", name="Rejeitar não necessários").click(force=True)
                 except Exception:
                     pass
 
-                page.get_by_role("button", name="Dados Abertos").click()
-                with page.expect_download() as download_info:
-                    with page.expect_popup():
+                frame = page.locator('iframe[title="Item"]').content_frame
+                if frame is None:
+                    logger.error("Nenhum frame encontrado no iframe.")
+                    return False, pd.DataFrame(), 0
+
+                for ano in range(ano_inicio, ano_fim + 1):
+                    mes = 12
+                    if ano == datetime.now().year:
+                        mes = datetime.now().month
+                    mes_str = str(mes).zfill(2)
+
+                    logger.info(f"Selecionando ano {ano} e mês {mes_str}...")
+                    frame.get_by_label("Ano").select_option(str(ano))
+                    sleep(random.uniform(0.3, 0.8))
+                    frame.get_by_label("Mês", exact=True).select_option(mes_str)
+                    try:
+                        frame.get_by_text("Consultar").click()
+                    except Exception:
+                        pass
+
+                    page.get_by_role("button", name="Dados Abertos").click()
+                    with page.expect_download(timeout=120000) as download_info:
                         frame.get_by_role("button", name="Confirmar").click(force=True)
-                download = download_info.value
+                    download = download_info.value
 
 
-                caminho_arquivo = obter_caminho_arquivo('data/orcamento', f'orcamento_despesas_{ano}.csv')
-                os.makedirs(os.path.dirname(caminho_arquivo), exist_ok=True)
-                download.save_as(caminho_arquivo)
+                    caminho_arquivo = obter_caminho_arquivo('data/orcamento', f'orcamento_despesas_{ano}.csv')
+                    os.makedirs(os.path.dirname(caminho_arquivo), exist_ok=True)
+                    download.save_as(caminho_arquivo)
 
-                df, linhas_ = limpar_dados_brutos(caminho_arquivo)
-                df['ano'] = ano
-                lista_df.append(df)
-                linhas_removidas += linhas_
+                    df, linhas_ = limpar_dados_brutos(caminho_arquivo)
+                    df['ano'] = ano
+                    lista_df.append(df)
+                    linhas_removidas += linhas_
 
+                    try:
+                        os.remove(caminho_arquivo)
+                    except Exception:
+                        pass
+
+                    # fecha possível janela extra do portal
+                    try:
+                        frame.get_by_role("button", name="Fechar Janela").click()
+                    except Exception:
+                        pass
+
+                    sleep(random.uniform(0.3, 1.0))
+
+            except Exception as erro_raspagem:
                 try:
-                    os.remove(caminho_arquivo)
-                except Exception:
-                    pass
-
-                # fecha possível janela extra do portal
-                try:
-                    frame.get_by_role("button", name="Fechar Janela").click()
-                except Exception:
-                    pass
-
-                sleep(random.uniform(0.3, 1.0))
+                    agora = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    caminho_foto = obter_caminho_arquivo("logs", f"erro_orcamento_{agora}.png")
+                    page.screenshot(path=str(caminho_foto), full_page=True)
+                    logger.error(f"ERRO CAPTURADO! Screenshot salvo em: {caminho_foto}")
+                except Exception as erro_foto:
+                    logger.error(f"Não foi possível tirar o screenshot: {erro_foto}")
+                raise erro_raspagem
 
             browser.close()
 
@@ -115,12 +125,5 @@ def baixar_dados_orcamento(ano_inicio: int, ano_fim: int, url: str) -> tuple[boo
         return True, df_agrupado, linhas_removidas
 
     except Exception as e:
-        try:
-            # Descobre a raiz do projeto e salva na pasta logs
-            caminho_foto = obter_caminho_arquivo( "logs", f"erro_tela{datetime.now()}.png")
-            page.screenshot(path=str(caminho_foto), full_page=True)
-            logger.error(f"Erro na raspagem. Screenshot salvo em: {caminho_foto}")
-        except Exception as erro_foto:
-            logger.error(f"Não foi possível tirar o screenshot.{erro_foto}")
         logger.error(f"Erro ao processar os dados de orçamento: {e}")
         return False, pd.DataFrame(), 0
