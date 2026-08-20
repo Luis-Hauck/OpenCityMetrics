@@ -48,7 +48,7 @@ def processar_patrimonio(novo_df:pd.DataFrame, df_base: pd.DataFrame, token_hosp
         # O parâmetro keep='last' garante que, se houver conflito, o dado que veio
         # do df_novo (o que acabou de ser baixado) vença e mate o dado velho.
         df_final = df_final.drop_duplicates(
-            subset=['Unidade Gestora', 'Código', 'Valor Contábil'],
+            subset=['Unidade Gestora', 'Código'],
             keep='last')
 
         
@@ -60,7 +60,7 @@ def processar_patrimonio(novo_df:pd.DataFrame, df_base: pd.DataFrame, token_hosp
             arquivo=caminho_local,
             prefixo='json',
             expire=90,
-            nome_arquivo='PatrimonioCorupa',
+            nome_arquivo='PatrimonioCorupa1',
             content_type='application/json; charset=Latin1',
             token_hospedagem=token_hospedagem
         )
