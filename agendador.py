@@ -114,6 +114,7 @@ def job_coletar_dados_orcamento():
         df_base = pd.DataFrame()
     caminho = obter_caminho_arquivo('data', 'config.json')
     config = load_config(rf'{caminho}')
+    logger.info(config)
     try:
         for estado, cidades in config.items():
             for cidade, dados_cidade in cidades.items():
@@ -126,7 +127,7 @@ def job_coletar_dados_orcamento():
                     concluido = False
                     logger.info(f'Tentativa n° {tentativas + 1} de acessar o portal')
                     while tentativas < 3 and not concluido:
-                        sleep(random.uniform(20, 120))
+                        sleep(random.uniform(5, 15))
                         sucesso, df_novo, linhas_removidas = baixar_dados_orcamento(ano_inicio, ano_fim, url)
                         if sucesso:
                             base['orcamento']['dados_ausentes'] = linhas_removidas
@@ -175,10 +176,10 @@ def job_coletar_dados_patrimonio():
 
 def setup_schedule():
 
-    schedule.every().day.at("19:22", "America/Sao_Paulo").do(job_coletar_dados_orcamento())
-    schedule.every().day.at("19:25", "America/Sao_Paulo").do(job_coletar_dados_patrimonio())
-    schedule.every().day.at("19:27", "America/Sao_Paulo").do(job_coletar_dados_funcionarios())
-    schedule.every().day.at("19::30", "America/Sao_Paulo").do(job_coletar_dados_obras())
+    schedule.every().day.at("19:27", "America/Sao_Paulo").do(job_coletar_dados_orcamento())
+    schedule.every().day.at("19:29", "America/Sao_Paulo").do(job_coletar_dados_patrimonio())
+    schedule.every().day.at("19:30", "America/Sao_Paulo").do(job_coletar_dados_funcionarios())
+    schedule.every().day.at("19::35", "America/Sao_Paulo").do(job_coletar_dados_obras())
 
 
 def start_scheduler():
