@@ -19,8 +19,9 @@ from collectors.obras import baixar_dados_obras
 from collectors.orcamento import baixar_dados_orcamento
 from collectors.patrimonio import baixar_dados_patrimonio
 from utils.config import load_config, save_config, obter_caminho_arquivo
+from utils.logging_ import setup_logging
 
-
+setup_logging()
 load_dotenv()
 
 ARQUIVO_BASE_DESPESAS_FUNCIONARIOS_CORUPA = os.getenv('ARQUIVO_BASE_DESPESAS_FUNCIONARIOS_CORUPA')
@@ -176,10 +177,10 @@ def job_coletar_dados_patrimonio():
 
 def setup_schedule():
 
-    schedule.every().day.at("19:27", "America/Sao_Paulo").do(job_coletar_dados_orcamento())
-    schedule.every().day.at("19:29", "America/Sao_Paulo").do(job_coletar_dados_patrimonio())
-    schedule.every().day.at("19:30", "America/Sao_Paulo").do(job_coletar_dados_funcionarios())
-    schedule.every().day.at("19::35", "America/Sao_Paulo").do(job_coletar_dados_obras())
+    schedule.every().day.at("19:39", "America/Sao_Paulo").do(job_coletar_dados_orcamento)
+    schedule.every().day.at("19:40", "America/Sao_Paulo").do(job_coletar_dados_patrimonio)
+    schedule.every().day.at("19:42", "America/Sao_Paulo").do(job_coletar_dados_funcionarios)
+    schedule.every().day.at("19:45", "America/Sao_Paulo").do(job_coletar_dados_obras)
 
 
 def start_scheduler():
