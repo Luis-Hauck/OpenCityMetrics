@@ -24,7 +24,7 @@ def fazer_upload(nome_arquivo, prefixo, expire, arquivo, content_type, token_hos
                 'https://blob.squarecloud.app/v1/objects',
                 headers={'Authorization': token_hospedagem},
                 params={'name': nome_arquivo, 'prefix': prefixo, 'expire': expire},
-                files={'file': (arquivo, f, content_type)},
+                files={'file': ('dados.json', f, content_type)},
             )
 
         data = response.json()
@@ -35,7 +35,7 @@ def fazer_upload(nome_arquivo, prefixo, expire, arquivo, content_type, token_hos
             print(f'Erro ao fazer upload para nuvem: {data.get("code", "Erro desconhecido")}')
             return False
 
-        print(f'Sucesso em fazer upload para nuvem: {response.text}')
+        print(f'Sucesso em fazer upload para nuvem')
         return True
 
     except Exception as e:
