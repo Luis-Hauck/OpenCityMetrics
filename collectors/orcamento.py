@@ -72,7 +72,7 @@ def baixar_dados_orcamento(ano_inicio: int, ano_fim: int, url: str) -> tuple[boo
                 page.get_by_role("button", name="Dados Abertos").click()
                 with page.expect_download() as download_info:
                     with page.expect_popup():
-                        frame.get_by_role("button", name="Confirmar").click()
+                        frame.get_by_role("button", name="Confirmar").click(force=True)
                 download = download_info.value
 
 
