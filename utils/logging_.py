@@ -7,7 +7,7 @@ def setup_logging():
     """Configura o sistema de logging"""
 
     # Garante a existência da pasta logs
-    root_dir = Path(__file__).resolve().parent.parent.parent
+    root_dir = Path(__file__).resolve().parent.parent
 
     # Define a pasta de logs na RAIZ (ou onde você preferir)
     log_dir = root_dir / 'logs'
