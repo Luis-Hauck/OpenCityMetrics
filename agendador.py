@@ -177,10 +177,10 @@ def job_coletar_dados_patrimonio():
 
 def setup_schedule():
 
-    schedule.every().day.at("20:07", "America/Sao_Paulo").do(job_coletar_dados_orcamento)
-    schedule.every().day.at("20:05", "America/Sao_Paulo").do(job_coletar_dados_patrimonio)
-    schedule.every().day.at("20:00", "America/Sao_Paulo").do(job_coletar_dados_funcionarios)
-    schedule.every().day.at("19:58", "America/Sao_Paulo").do(job_coletar_dados_obras)
+    schedule.every().day.at("20:10", "America/Sao_Paulo").do(job_coletar_dados_orcamento)
+    schedule.every().day.at("20:09", "America/Sao_Paulo").do(job_coletar_dados_patrimonio)
+    schedule.every().day.at("20:08", "America/Sao_Paulo").do(job_coletar_dados_funcionarios)
+    schedule.every().day.at("20:05", "America/Sao_Paulo").do(job_coletar_dados_obras)
 
 
 def start_scheduler():

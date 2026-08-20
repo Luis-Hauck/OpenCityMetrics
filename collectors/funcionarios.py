@@ -144,6 +144,6 @@ def baixar_dados_funcionarios(mes_inicio:int, mes_fim:int, ano_inicio:int, ano_f
             page.screenshot(path=str(caminho_foto), full_page=True)
             logger.error(f"Erro na raspagem. Screenshot salvo em: {caminho_foto}")
         except Exception as erro_foto:
-            logger.error("Não foi possível tirar o screenshot.")
+            logger.error(f"Não foi possível tirar o screenshot.{erro_foto}")
         logger.error(f"Erro ao processar os dados dos funcionarios: {e}")
         return False, pd.DataFrame(), 0

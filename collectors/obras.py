@@ -215,6 +215,6 @@ def baixar_dados_obras(ano_inicio: int, ano_fim: int, url: str) -> tuple[bool, p
             page.screenshot(path=str(caminho_foto), full_page=True)
             logger.error(f"Erro na raspagem. Screenshot salvo em: {caminho_foto}")
         except Exception as erro_foto:
-            logger.error("Não foi possível tirar o screenshot.")
+            logger.error(f"Não foi possível tirar o screenshot.{erro_foto}")
         logger.warning(f"Erro ao processar os dados de obras: {e}")
         return False, pd.DataFrame(), 0
