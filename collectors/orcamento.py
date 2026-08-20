@@ -52,7 +52,7 @@ def baixar_dados_orcamento(ano_inicio: int, ano_fim: int, url: str) -> tuple[boo
             sleep(random.uniform(2.5, 4.5))
 
             try:
-                page.get_by_role("button", name="Rejeitar não necessários").click()
+                page.get_by_role("button", name="Rejeitar não necessários").click(force=True)
             except Exception:
                 pass
 
@@ -114,7 +114,7 @@ def baixar_dados_orcamento(ano_inicio: int, ano_fim: int, url: str) -> tuple[boo
     except Exception as e:
         try:
             # Descobre a raiz do projeto e salva na pasta logs
-            caminho_foto = obter_caminho_arquivo( "logs", "erro_tela.png")
+            caminho_foto = obter_caminho_arquivo( "logs", f"erro_tela{datetime.now()}.png")
             page.screenshot(path=str(caminho_foto), full_page=True)
             logger.error(f"Erro na raspagem. Screenshot salvo em: {caminho_foto}")
         except Exception as erro_foto:

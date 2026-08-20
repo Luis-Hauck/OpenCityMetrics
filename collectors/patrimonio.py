@@ -44,7 +44,7 @@ def baixar_dados_patrimonio(url: str) -> tuple[bool, pd.DataFrame, int]:
             sleep(random.uniform(2.5, 4.5))
 
             try:
-                page.get_by_role("button", name="Rejeitar não necessários").click()
+                page.get_by_role("button", name="Rejeitar não necessários").click(force=True)
             except Exception:
                 pass
 
@@ -92,5 +92,12 @@ def baixar_dados_patrimonio(url: str) -> tuple[bool, pd.DataFrame, int]:
         return True, df, linhas_removidas
 
     except Exception as e:
-        logger.error(f"Erro ao processar os dados de patrimônio: {e}")
+        try:
+            # Descobre a raiz do projeto e salva na pasta logs
+            caminho_foto = obter_caminho_arquivo( "logs", f"erro_tela{datetime.now()}.png")
+            page.screenshot(path=str(caminho_foto), full_page=True)
+            logger.error(f"Erro na raspagem. Screenshot salvo em: {caminho_foto}")
+        except Exception as erro_foto:
+            logger.error("Não foi possível tirar o screenshot.")
+        logger.error(f"Erro ao processar os dados de orçamento: {e}")
         return False, pd.DataFrame(), 0

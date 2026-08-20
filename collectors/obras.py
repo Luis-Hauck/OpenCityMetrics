@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from playwright.sync_api import sync_playwright
 import pandas as pd
 import os
@@ -207,5 +209,12 @@ def baixar_dados_obras(ano_inicio: int, ano_fim: int, url: str) -> tuple[bool, p
         return True, df_agrupado, linhas_removidas
 
     except Exception as e:
+        try:
+            # Descobre a raiz do projeto e salva na pasta logs
+            caminho_foto = obter_caminho_arquivo( "logs", f"erro_tela{datetime.now()}.png")
+            page.screenshot(path=str(caminho_foto), full_page=True)
+            logger.error(f"Erro na raspagem. Screenshot salvo em: {caminho_foto}")
+        except Exception as erro_foto:
+            logger.error("Não foi possível tirar o screenshot.")
         logger.warning(f"Erro ao processar os dados de obras: {e}")
         return False, pd.DataFrame(), 0

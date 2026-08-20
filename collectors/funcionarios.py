@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from playwright.sync_api import sync_playwright
 import pandas as pd
 import os
@@ -93,7 +95,7 @@ def baixar_dados_funcionarios(mes_inicio:int, mes_fim:int, ano_inicio:int, ano_f
 
             # Tenta rejeitar cookies se existir o botão
             try:
-                page.get_by_role("button", name="Rejeitar não necessários").click()
+                page.get_by_role("button", name="Rejeitar não necessários").click(force=True)
             except Exception:
                 pass
 
@@ -136,5 +138,12 @@ def baixar_dados_funcionarios(mes_inicio:int, mes_fim:int, ano_inicio:int, ano_f
         return True, df_agrupado, linhas_removidas
 
     except Exception as e:
+        try:
+            # Descobre a raiz do projeto e salva na pasta logs
+            caminho_foto = obter_caminho_arquivo( "logs", f"erro_tela{datetime.now()}.png")
+            page.screenshot(path=str(caminho_foto), full_page=True)
+            logger.error(f"Erro na raspagem. Screenshot salvo em: {caminho_foto}")
+        except Exception as erro_foto:
+            logger.error("Não foi possível tirar o screenshot.")
         logger.error(f"Erro ao processar os dados dos funcionarios: {e}")
         return False, pd.DataFrame(), 0
