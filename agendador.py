@@ -54,6 +54,7 @@ def job_coletar_dados_funcionarios():
 
                     tentativas = 0
                     concluido = False
+                    logger.info(f'Tentativa n° {tentativas + 1} de acessar o portal')
                     while tentativas < 3 and not concluido:
                         sleep(random.uniform(20, 120))
                         sucesso, df_novo, linhas_removidas = baixar_dados_funcionarios(mes_incial, mes_final, ano_incial, ano_final, url)
@@ -89,6 +90,7 @@ def job_coletar_dados_obras():
                     ano_fim = datetime.today().year
                     tentativas = 0
                     concluido = False
+                    logger.info(f'Tentativa n° {tentativas + 1} de acessar o portal')
                     while tentativas < 3 and not concluido:
                         sleep(random.uniform(20, 120))
                         sucesso, df_novo, linhas_removidas = baixar_dados_obras(ano_inicio, ano_fim, url)
@@ -122,6 +124,7 @@ def job_coletar_dados_orcamento():
                     ano_fim = datetime.today().year
                     tentativas = 0
                     concluido = False
+                    logger.info(f'Tentativa n° {tentativas + 1} de acessar o portal')
                     while tentativas < 3 and not concluido:
                         sleep(random.uniform(20, 120))
                         sucesso, df_novo, linhas_removidas = baixar_dados_orcamento(ano_inicio, ano_fim, url)
@@ -153,6 +156,7 @@ def job_coletar_dados_patrimonio():
                     url = dados_cidade['base_dados']['patrimonio']['url']
                     tentativas = 0
                     concluido = False
+                    logger.info(f'Tentativa n° {tentativas+1} de acessar o portal')
                     while tentativas < 3 and not concluido:
                         sleep(random.uniform(20, 120))
                         sucesso, df_novo, linhas_removidas = baixar_dados_patrimonio(url)
@@ -170,10 +174,10 @@ def job_coletar_dados_patrimonio():
 
 def setup_schedule():
 
-    schedule.every().day.at("18:55", "America/Sao_Paulo").do(job_coletar_dados_orcamento())
-    schedule.every().day.at("19:03", "America/Sao_Paulo").do(job_coletar_dados_patrimonio())
-    schedule.every().day.at("19:10", "America/Sao_Paulo").do(job_coletar_dados_funcionarios())
-    schedule.every().day.at("19::17", "America/Sao_Paulo").do(job_coletar_dados_obras())
+    schedule.every().day.at("19:12", "America/Sao_Paulo").do(job_coletar_dados_orcamento())
+    schedule.every().day.at("19:17", "America/Sao_Paulo").do(job_coletar_dados_patrimonio())
+    schedule.every().day.at("19:20", "America/Sao_Paulo").do(job_coletar_dados_funcionarios())
+    schedule.every().day.at("19::25", "America/Sao_Paulo").do(job_coletar_dados_obras())
 
 
 def start_scheduler():
