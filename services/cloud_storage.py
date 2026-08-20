@@ -1,7 +1,9 @@
 import requests
 import pandas as pd
 import io
+import logging
 
+logger = logging.getLogger(__name__)
 
 def fazer_upload(nome_arquivo, prefixo, expire, arquivo, content_type, token_hospedagem) -> bool:
     """
@@ -32,10 +34,10 @@ def fazer_upload(nome_arquivo, prefixo, expire, arquivo, content_type, token_hos
         status = data.get('status', 'error')
 
         if status != 'success':
-            print(f'Erro ao fazer upload para nuvem: {data.get("code", "Erro desconhecido")}')
+            logging.error(f'Erro ao fazer upload para nuvem: {data.get("code", "Erro desconhecido")}')
             return False
 
-        print(f'Sucesso em fazer upload para nuvem')
+        logging.info(f'Sucesso em fazer upload para nuvem')
         return True
 
     except Exception as e:
@@ -45,13 +47,33 @@ def fazer_upload(nome_arquivo, prefixo, expire, arquivo, content_type, token_hos
 
 def obter_dados(url) -> (bool, pd.DataFrame):
     """Busca o JSON/Parquet consolidado do Blob e retorna o DataFrame pronto."""
-    resp = requests.get(url)
-    resp.raise_for_status()
 
-    if resp.status_code == 200:
-        json = io.StringIO(resp.text)
-        return True, pd.read_json(json, orient='split')
-    else:
-        print(f"Erro ao baixar da Square Cloud. Código HTTP: {resp.status_code}")
-        print("Verifique se a URL está correta ou se o arquivo é público.")
+    try:
+        if not url:
+            logger.error("URL vazia ao tentar obter dados.")
+            return False, pd.DataFrame()
+
+        if not url.startswith(('http://', 'https://')):
+            url = 'https://' + url
+
+        resp = requests.get(url, timeout=15)
+        resp.raise_for_status()  # Força o erro ir para o "except" se for 404 (Não Encontrado)
+
+        if resp.status_code == 200:
+            json_data = io.StringIO(resp.text)
+            return True, pd.read_json(json_data, orient='split')
+
+    except requests.exceptions.RequestException as e:
+        # Cai aqui se a URL estiver errada, site fora do ar, ou arquivo não existir (404)
+        logger.error(f"Falha de conexão ou arquivo não encontrado: {e}")
+        return False, pd.DataFrame()
+
+    except ValueError as e:
+        # Cai aqui se o arquivo baixou, mas não era um JSON válido
+        logger.error(f"O arquivo baixado não é um JSON válido: {e}")
+        return False, pd.DataFrame()
+
+    except Exception as e:
+        # Segurança máxima contra falhas bizarras
+        logger.error(f"Erro inesperado no obter_dados: {e}")
         return False, pd.DataFrame()
