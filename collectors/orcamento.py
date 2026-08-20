@@ -6,6 +6,7 @@ from playwright_stealth import Stealth
 from time import sleep
 import random
 import logging
+import asyncio
 
 from processors.limpar_dados import limpar_dados_brutos
 from utils.config import obter_caminho_arquivo
@@ -25,6 +26,9 @@ def baixar_dados_orcamento(ano_inicio: int, ano_fim: int, url: str) -> tuple[boo
     """
     lista_df: list[pd.DataFrame] = []
     linhas_removidas = 0
+
+    # Força o Python a criar um motor limpo, matando qualquer fantasma de erro anterior
+    asyncio.set_event_loop(asyncio.new_event_loop())
 
     try:
         with sync_playwright() as p:
@@ -108,5 +112,12 @@ def baixar_dados_orcamento(ano_inicio: int, ano_fim: int, url: str) -> tuple[boo
         return True, df_agrupado, linhas_removidas
 
     except Exception as e:
+        try:
+            # Descobre a raiz do projeto e salva na pasta logs
+            caminho_foto = obter_caminho_arquivo( "logs", "erro_tela.png")
+            page.screenshot(path=str(caminho_foto), full_page=True)
+            logger.error(f"Erro na raspagem. Screenshot salvo em: {caminho_foto}")
+        except Exception as erro_foto:
+            logger.error("Não foi possível tirar o screenshot.")
         logger.error(f"Erro ao processar os dados de orçamento: {e}")
         return False, pd.DataFrame(), 0
