@@ -57,6 +57,9 @@ def baixar_dados_orcamento(ano_inicio: int, ano_fim: int, url: str) -> tuple[boo
                 pass
 
             frame = page.locator('iframe[title="Item"]').content_frame
+            if frame is None:
+                logger.error("Nenhum frame encontrado no iframe.")
+                return False, pd.DataFrame(), 0
 
             for ano in range(ano_inicio, ano_fim + 1):
                 mes = 12
