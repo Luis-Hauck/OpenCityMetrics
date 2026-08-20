@@ -46,7 +46,7 @@ def processar_orcamento(novo_df:pd.DataFrame, df_base: pd.DataFrame, token_hospe
         # O parâmetro keep='last' garante que, se houver conflito, o dado que veio
         # do df_novo (o que acabou de ser baixado) vença e mate o dado velho.
         df_final = df_final.drop_duplicates(
-            subset=["Entidade","Função","Subfunção","Programa","Ação","Vínculo","Categoria Econômica","Grupo de Despesa","Modalidade","ano"],
+            subset=["Entidade","Função","Subfunção","Programa","Ação","Vínculo","Categoria Econômica","Grupo de Despesa","Modalidade","Ano"],
             keep='last')
 
         
