@@ -110,10 +110,13 @@ def baixar_dados_funcionarios(mes_inicio:int, mes_fim:int, ano_inicio:int, ano_f
 
                     page.get_by_role("button", name="Dados Abertos").click(force=True)
 
+                    # Aguarda um pouco para que o download seja iniciado
+                    page.wait_for_timeout(5000)
+
                     # O Playwright "escuta" o evento de download antes mesmo de você clicar
                     with page.expect_download() as download_info:
-                        with page.expect_popup() as page1_info:
-                            frame.get_by_role("button", name="Confirmar").click(force=True)
+                        botao_confirmar = frame.get_by_role("button", name="Confirmar")
+                        botao_confirmar.evaluate("botao => botao.click()")
 
                     # Pega o arquivo que foi gerado
                     download = download_info.value
