@@ -50,10 +50,11 @@ def baixar_dados_orcamento(ano_inicio: int, ano_fim: int, url: str) -> tuple[boo
             try:
                 logger.info("Acessando o portal de execução do orçamento da despesa...")
                 page.goto(url)
-                sleep(random.uniform(2.5, 4.5))
+                sleep(random.uniform(7, 20))
 
                 try:
                     page.get_by_role("button", name="Rejeitar não necessários").click(force=True)
+                    sleep(random.uniform(0.5, 2))
                 except Exception:
                     pass
 
@@ -74,6 +75,7 @@ def baixar_dados_orcamento(ano_inicio: int, ano_fim: int, url: str) -> tuple[boo
                     frame.get_by_label("Mês", exact=True).select_option(mes_str)
                     try:
                         frame.get_by_text("Consultar").click()
+                        sleep(random.uniform(1, 3))
                     except Exception:
                         pass
 
@@ -82,8 +84,11 @@ def baixar_dados_orcamento(ano_inicio: int, ano_fim: int, url: str) -> tuple[boo
                     # Aguarda um pouco para que o download seja iniciado
                     page.wait_for_timeout(5000)
 
-                    with page.expect_download(timeout=120000) as download_info:
-                        frame.get_by_role("button", name="Confirmar").click(force=True)
+                    with page.expect_download() as download_info:
+                        with page.expect_popup() as page1_info:
+                            frame.get_by_role("button", name="Confirmar").click(force=True)
+
+                    # Pega o arquivo que foi gerado
                     download = download_info.value
 
 
@@ -107,7 +112,7 @@ def baixar_dados_orcamento(ano_inicio: int, ano_fim: int, url: str) -> tuple[boo
                     except Exception:
                         pass
 
-                    sleep(random.uniform(0.3, 1.0))
+                    sleep(random.uniform(2, 5))
 
             except Exception as erro_raspagem:
                 try:

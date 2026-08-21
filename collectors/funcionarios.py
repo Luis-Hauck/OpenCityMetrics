@@ -63,7 +63,7 @@ def baixar_dados_funcionarios(mes_inicio:int, mes_fim:int, ano_inicio:int, ano_f
         asyncio.set_event_loop(asyncio.new_event_loop())
         with sync_playwright() as p:
             browser = p.chromium.launch(
-                headless=True,
+                headless=False,
                 args=[
                     "--disable-blink-features=AutomationControlled",  #
                     "--disable-infobars",
@@ -91,32 +91,37 @@ def baixar_dados_funcionarios(mes_inicio:int, mes_fim:int, ano_inicio:int, ano_f
                 logger.info("Acessando a página dos funcionários")
                 page.goto(url)
 
-                sleep(random.uniform(4.5, 7.2))
+                sleep(random.uniform(7.5, 15))
 
                 # Tenta rejeitar cookies se existir o botão
                 try:
                     page.get_by_role("button", name="Rejeitar não necessários").click(force=True)
+                    sleep(random.uniform(0.5, 2))
                 except Exception:
                     pass
 
 
                 for data in gerar_lista_meses(mes_inicio, mes_fim, ano_inicio, ano_fim):
                     logger.info(f'Selecioando a data: {data}')
-
+                    sleep(random.uniform(1.5, 3))
                     frame.get_by_label("Mês/Ano").select_option(label=data)
 
-                    logger.info("Iniciando o download...")
+                    try:
+                        frame.get_by_text("Consultar", exact=True).click()
+                        sleep(random.uniform(6, 15))
+                    except Exception:
+                        pass
 
+                    logger.info("Iniciando o download...")
 
                     page.get_by_role("button", name="Dados Abertos").click(force=True)
 
                     # Aguarda um pouco para que o download seja iniciado
                     page.wait_for_timeout(5000)
 
-                    # O Playwright "escuta" o evento de download antes mesmo de você clicar
                     with page.expect_download() as download_info:
-                        botao_confirmar = frame.get_by_role("button", name="Confirmar")
-                        botao_confirmar.evaluate("botao => botao.click()")
+                        with page.expect_popup() as page1_info:
+                            frame.get_by_role("button", name="Confirmar").click(force=True)
 
                     # Pega o arquivo que foi gerado
                     download = download_info.value
@@ -132,6 +137,12 @@ def baixar_dados_funcionarios(mes_inicio:int, mes_fim:int, ano_inicio:int, ano_f
 
                     #Deleta o arquivo lido
                     os.remove(caminho_arquivo)
+
+                    # fecha possível janela extra do portal
+                    try:
+                        frame.get_by_role("button", name="Fechar Janela").click()
+                    except Exception:
+                        pass
                     sleep(random.uniform(0.3, 2))
 
             except Exception as erro_raspagem:

@@ -42,7 +42,7 @@ def baixar_dados_patrimonio(url: str) -> tuple[bool, pd.DataFrame, int]:
             try:
                 logger.info("Acessando o portal de patrimônio...")
                 page.goto(url)
-                sleep(random.uniform(2.5, 4.5))
+                sleep(random.uniform(7, 15))
 
                 try:
                     page.get_by_role("button", name="Rejeitar não necessários").click(force=True)
@@ -57,6 +57,7 @@ def baixar_dados_patrimonio(url: str) -> tuple[bool, pd.DataFrame, int]:
                     # Tenta desmarcar o ano corrente se existir
                     try:
                         frame.get_by_role("checkbox", name=f"{datetime.today().year}").uncheck()
+                        sleep(random.uniform(0.3, 0.8))
                     except Exception:
                         pass
                 except Exception:
@@ -67,14 +68,17 @@ def baixar_dados_patrimonio(url: str) -> tuple[bool, pd.DataFrame, int]:
                 except Exception:
                     pass
 
-                sleep(random.uniform(0.6, 1.2))
+                sleep(random.uniform(3, 5))
                 page.get_by_role("button", name="Dados Abertos").click(force=True)
 
                 # Aguarda um pouco para que o download seja iniciado
                 page.wait_for_timeout(5000)
 
-                with page.expect_download(timeout=120000) as download_info:
-                    frame.get_by_role("button", name="Confirmar").click()
+                with page.expect_download() as download_info:
+                    with page.expect_popup() as page1_info:
+                        frame.get_by_role("button", name="Confirmar").click(force=True)
+
+                # Pega o arquivo que foi gerado
                 download = download_info.value
 
                 caminho_arquivo = obter_caminho_arquivo('data/patrimonio', f'patrimonio_bens.csv')
@@ -90,6 +94,11 @@ def baixar_dados_patrimonio(url: str) -> tuple[bool, pd.DataFrame, int]:
                 except Exception:
                     pass
 
+                # fecha possível janela extra do portal
+                try:
+                    frame.get_by_role("button", name="Fechar Janela").click()
+                except Exception:
+                    pass
             except Exception as erro_raspagem:
                 try:
                     agora = datetime.now().strftime("%Y%m%d_%H%M%S")

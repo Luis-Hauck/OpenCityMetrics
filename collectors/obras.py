@@ -52,7 +52,7 @@ def baixar_dados_obras(ano_inicio: int, ano_fim: int, url: str) -> tuple[bool, p
             page.set_default_timeout(60000)
             logger.info("Acessando o portal de obras...")
             page.goto(url)
-            sleep(random.uniform(3.0, 7.0))
+            sleep(random.uniform(7.0, 15))
 
             # Tenta rejeitar cookies se existir o botão
             try:
@@ -66,9 +66,15 @@ def baixar_dados_obras(ano_inicio: int, ano_fim: int, url: str) -> tuple[bool, p
             #  baixar CSVs por ano
             for ano in range(ano_inicio, ano_fim + 1):
                 try:
+                    sleep(random.uniform(0.5, 1.5))
                     logger.info(f"Selecionando o ano: {ano}")
                     frame.get_by_label("Ano", exact=True).select_option(str(ano))
-                    sleep(random.uniform(0.6, 2))
+
+                    try:
+                        frame.get_by_text("Consultar", exact=True).click()
+                        sleep(random.uniform(6, 15))
+                    except Exception:
+                        pass
 
                     logger.info("Iniciando o download de Dados Abertos...")
                     page.get_by_role("button", name="Dados Abertos").click(force=True)
@@ -76,8 +82,11 @@ def baixar_dados_obras(ano_inicio: int, ano_fim: int, url: str) -> tuple[bool, p
                     # Aguarda um pouco para que o download seja iniciado
                     page.wait_for_timeout(5000)
 
-                    with page.expect_download(timeout=120000) as download_info:
-                        frame.get_by_role("button", name="Confirmar").click(force=True)
+                    with page.expect_download() as download_info:
+                        with page.expect_popup() as page1_info:
+                            frame.get_by_role("button", name="Confirmar").click(force=True)
+
+                    # Pega o arquivo que foi gerado
                     download = download_info.value
 
                     caminho_arquivo = obter_caminho_arquivo('data/obras', f'obras_{ano}.csv')
@@ -97,7 +106,7 @@ def baixar_dados_obras(ano_inicio: int, ano_fim: int, url: str) -> tuple[bool, p
                     except Exception:
                         pass
 
-                    sleep(random.uniform(0.5, 1.5))
+                    sleep(random.uniform(5, 10))
                 except Exception as erro_raspagem:
                     try:
                         agora = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -161,7 +170,7 @@ def baixar_dados_obras(ano_inicio: int, ano_fim: int, url: str) -> tuple[bool, p
 
                 # Troca o ano no filtro quando necessário
                 if ano_obra != ano_atual_no_site:
-                    sleep(random.uniform(0.8, 1.6))
+                    sleep(random.uniform(2, 5))
                     logger.info(f"Mudando filtro do portal para o ano: {int(ano_obra)}")
                     frame.get_by_label("Ano", exact=True).select_option(str(int(ano_obra)))
                     ano_atual_no_site = ano_obra
@@ -174,14 +183,14 @@ def baixar_dados_obras(ano_inicio: int, ano_fim: int, url: str) -> tuple[bool, p
                     # Preenche o número da obra e consulta
                     campo_ano_obra = frame.get_by_role("textbox", name="Primeiro valor para o filtro")
                     campo_ano_obra.clear()
-                    campo_ano_obra.press_sequentially((str(int(numero_da_obra))), delay=random.uniform(0.1, 0.3))
+                    campo_ano_obra.press_sequentially((str(int(numero_da_obra))), delay=random.uniform(1, 3))
                     frame.get_by_text("Consultar", exact=True).click()
                     sleep(random.uniform(0.9, 1.7))
 
                     # Localiza a linha correta pela entidade e abre detalhes
                     linha_correta = frame.locator("table tbody tr").filter(has_text=entidade)
                     linha_correta.get_by_title("Visualizar").first.click()
-                    sleep(random.uniform(0.8, 1.5))
+                    sleep(random.uniform(1, 3))
 
                     # Aba Execução e captura o campo de %
                     frame.get_by_role("listitem", name="Execução").click()
