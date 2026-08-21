@@ -71,10 +71,13 @@ def baixar_dados_obras(ano_inicio: int, ano_fim: int, url: str) -> tuple[bool, p
                     sleep(random.uniform(0.6, 2))
 
                     logger.info("Iniciando o download de Dados Abertos...")
-                    page.get_by_role("button", name="Dados Abertos").click()
+                    page.get_by_role("button", name="Dados Abertos").click(force=True)
+
+                    # Aguarda um pouco para que o download seja iniciado
+                    page.wait_for_timeout(5000)
 
                     with page.expect_download(timeout=120000) as download_info:
-                        frame.get_by_role("button", name="Confirmar").click()
+                        frame.get_by_role("button", name="Confirmar").click(force=True)
                     download = download_info.value
 
                     caminho_arquivo = obter_caminho_arquivo('data/obras', f'obras_{ano}.csv')

@@ -68,7 +68,10 @@ def baixar_dados_patrimonio(url: str) -> tuple[bool, pd.DataFrame, int]:
                     pass
 
                 sleep(random.uniform(0.6, 1.2))
-                page.get_by_role("button", name="Dados Abertos").click()
+                page.get_by_role("button", name="Dados Abertos").click(force=True)
+
+                # Aguarda um pouco para que o download seja iniciado
+                page.wait_for_timeout(5000)
 
                 with page.expect_download(timeout=120000) as download_info:
                     frame.get_by_role("button", name="Confirmar").click()
