@@ -19,6 +19,8 @@ def fazer_upload(nome_arquivo, prefixo, expire, arquivo, content_type, token_hos
     Returns: True caso consiga subir o arquivo na nuvem False caso contrário
 
     """
+    nome_arquivo = nome_arquivo.replace('\\', '/').strip()
+    prefixo = prefixo.replace('\\', '/').strip()
 
     try:
         with open(arquivo, 'rb') as f:
@@ -26,7 +28,7 @@ def fazer_upload(nome_arquivo, prefixo, expire, arquivo, content_type, token_hos
                 'https://blob.squarecloud.app/v1/objects',
                 headers={'Authorization': token_hospedagem},
                 params={'name': nome_arquivo, 'prefix': prefixo, 'expire': expire},
-                files={'file': ('dados.json', f, content_type)},
+                files={'file': (nome_arquivo, f, content_type)},
             )
 
         data = response.json()
