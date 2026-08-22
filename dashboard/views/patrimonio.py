@@ -26,6 +26,15 @@ except Exception as e:
 
 st.title('Patrimônio')
 
+# Nota explicativa geral
+st.caption(
+    """
+    **Visão informativa:** esta página apresenta o patrimônio público de forma agregada para apoiar análises e planejamento.
+    
+    **Cuidado com interpretações:** podem existir campos sem preenchimento ou dados atrasados conforme a atualização da Prefeitura. Para validação legal, utilize o **Portal da Transparência oficial**.
+    """
+)
+
 
 tab1, tab2, tab3 = st.tabs(['Visão geral', 'Frota de Veículos', 'Busca'])
 

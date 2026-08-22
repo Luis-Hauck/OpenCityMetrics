@@ -1,11 +1,11 @@
-from playwright.sync_api import sync_playwright
 import pandas as pd
 import os
-from playwright_stealth import Stealth
 from time import sleep
 from datetime import datetime
 import random
 import logging
+import asyncio
+from cloakbrowser import launch
 
 from processors.limpar_dados import limpar_dados_brutos
 from utils.config import obter_caminho_arquivo
@@ -23,93 +23,99 @@ def baixar_dados_patrimonio(url: str) -> tuple[bool, pd.DataFrame, int]:
         (sucesso: bool, df: pd.DataFrame)
     """
     try:
-        with sync_playwright() as p:
-            browser = p.chromium.launch(
-                headless=True,
-                args=[
-                    "--disable-blink-features=AutomationControlled",
-                    "--disable-infobars",
-                    "--no-sandbox",
-                    "--disable-dev-shm-usage",
-                ],
-            )
-            context = browser.new_context(locale="pt-BR", timezone_id="America/Sao_Paulo")
-            stealth = Stealth()
-            stealth.apply_stealth_sync(context)
-            page = context.new_page()
-            page.set_default_timeout(60000)
+        asyncio.set_event_loop(asyncio.new_event_loop())
+        browser = launch(
+            headless=False,
+            humanize=True,
+            args=[
+                # Mantemos apenas os argumentos de estabilidade para Linux
+                "--no-sandbox",
+                "--disable-dev-shm-usage",
+
+            ]
+        )
+
+        context = browser.new_context(
+            locale="pt-BR",
+            timezone_id="America/Sao_Paulo",
+            viewport={"width": 1920, "height": 1080}
+        )
+        page = context.new_page()
+        page.set_default_timeout(60000)
+        page = context.new_page()
+        page.set_default_timeout(60000)
+
+        try:
+            logger.info("Acessando o portal de patrimônio...")
+            page.goto(url)
+            sleep(random.uniform(7, 15))
 
             try:
-                logger.info("Acessando o portal de patrimônio...")
-                page.goto(url)
-                sleep(random.uniform(7, 15))
+                page.get_by_role("button", name="Rejeitar não necessários").click(force=True)
+            except Exception:
+                pass
 
+            frame = page.locator('iframe[title="Item"]').content_frame
+
+            # Executa consulta padrão (sem ano corrente)
+            try:
+                frame.get_by_label("Ano da Aquisição").click()
+                # Tenta desmarcar o ano corrente se existir
                 try:
-                    page.get_by_role("button", name="Rejeitar não necessários").click(force=True)
+                    frame.get_by_role("checkbox", name=f"{datetime.today().year}").uncheck()
+                    sleep(random.uniform(3, 6))
                 except Exception:
                     pass
+            except Exception:
+                pass
 
-                frame = page.locator('iframe[title="Item"]').content_frame
+            try:
+                frame.get_by_text("Consultar", exact=True).click()
+            except Exception:
+                pass
 
-                # Executa consulta padrão (sem ano corrente)
-                try:
-                    frame.get_by_label("Ano da Aquisição").click()
-                    # Tenta desmarcar o ano corrente se existir
-                    try:
-                        frame.get_by_role("checkbox", name=f"{datetime.today().year}").uncheck()
-                        sleep(random.uniform(0.3, 0.8))
-                    except Exception:
-                        pass
-                except Exception:
-                    pass
+            sleep(random.uniform(3, 5))
+            page.get_by_role("button", name="Dados Abertos").click(force=True)
 
-                try:
-                    frame.get_by_text("Consultar", exact=True).click()
-                except Exception:
-                    pass
+            # Aguarda um pouco para que o download seja iniciado
+            page.wait_for_timeout(5000)
 
-                sleep(random.uniform(3, 5))
-                page.get_by_role("button", name="Dados Abertos").click(force=True)
+            with page.expect_download() as download_info:
+                with page.expect_popup() as page1_info:
+                    frame.get_by_role("button", name="Confirmar").click(force=True)
 
-                # Aguarda um pouco para que o download seja iniciado
-                page.wait_for_timeout(5000)
+            # Pega o arquivo que foi gerado
+            download = download_info.value
 
-                with page.expect_download() as download_info:
-                    with page.expect_popup() as page1_info:
-                        frame.get_by_role("button", name="Confirmar").click(force=True)
+            caminho_arquivo = obter_caminho_arquivo('data/patrimonio', f'patrimonio_bens.csv')
+            os.makedirs(os.path.dirname(caminho_arquivo), exist_ok=True)
+            download.save_as(caminho_arquivo)
 
-                # Pega o arquivo que foi gerado
-                download = download_info.value
+            # Leitura e limpeza do CSV baixado
+            df, linhas_removidas = limpar_dados_brutos(caminho_arquivo)
 
-                caminho_arquivo = obter_caminho_arquivo('data/patrimonio', f'patrimonio_bens.csv')
-                os.makedirs(os.path.dirname(caminho_arquivo), exist_ok=True)
-                download.save_as(caminho_arquivo)
+            # Remove arquivo temporário
+            try:
+                os.remove(caminho_arquivo)
+            except Exception:
+                pass
 
-                # Leitura e limpeza do CSV baixado
-                df, linhas_removidas = limpar_dados_brutos(caminho_arquivo)
+            # fecha possível janela extra do portal
+            try:
+                frame.get_by_role("button", name="Fechar Janela").click()
+            except Exception:
+                pass
+        except Exception as erro_raspagem:
+            try:
+                agora = datetime.now().strftime("%Y%m%d_%H%M%S")
+                caminho_foto = obter_caminho_arquivo("logs", f"erro_patrimonio_{agora}.png")
+                page.screenshot(path=str(caminho_foto), full_page=True)
+                logger.error(f"ERRO CAPTURADO! Screenshot salvo em: {caminho_foto}")
+            except Exception as erro_foto:
+                logger.error(f"Não foi possível tirar o screenshot: {erro_foto}")
+            raise erro_raspagem
 
-                # Remove arquivo temporário
-                try:
-                    os.remove(caminho_arquivo)
-                except Exception:
-                    pass
-
-                # fecha possível janela extra do portal
-                try:
-                    frame.get_by_role("button", name="Fechar Janela").click()
-                except Exception:
-                    pass
-            except Exception as erro_raspagem:
-                try:
-                    agora = datetime.now().strftime("%Y%m%d_%H%M%S")
-                    caminho_foto = obter_caminho_arquivo("logs", f"erro_patrimonio_{agora}.png")
-                    page.screenshot(path=str(caminho_foto), full_page=True)
-                    logger.error(f"ERRO CAPTURADO! Screenshot salvo em: {caminho_foto}")
-                except Exception as erro_foto:
-                    logger.error(f"Não foi possível tirar o screenshot: {erro_foto}")
-                raise erro_raspagem
-
-            browser.close()
+        browser.close()
 
         logger.info("Dados de patrimônio coletados com sucesso!")
         return True, df, linhas_removidas
