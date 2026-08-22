@@ -16,12 +16,11 @@ st.caption('Monitoramento de gastos públicos, obras, patrimônio e orçamento �
 @st.dialog("⚠️ Aviso Importante sobre os Dados")
 def popup_avisos():
     st.markdown(
-        """
-        **Bem-vindo ao OpenCityMetrics (Fase Beta)**
-
-        * **Limitações:** Devido a bloqueios de segurança, a coleta automatizada enfrenta instabilidades. Os dados podem estar temporariamente desatualizados.
-        * **Uso Informativo:** Este painel não substitui fontes oficiais. Para validação legal, certidões ou denúncias, consulte sempre o Portal da Transparência da Prefeitura.
-        """
+        """    
+    * **Apenas Poder Executivo:** Os dados deste painel refletem exclusivamente a **Prefeitura Municipal** (secretarias, fundos e autarquias). O Poder Legislativo (Câmara de Vereadores) possui orçamento e portal próprios, não estando incluído aqui.
+    * **Limitações Técnicas:** A coleta automatizada enfrenta bloqueios de segurança. Por isso, os dados atuais podem estar temporariamente desatualizados ou incompletos.
+    * **Uso Informativo:** Este painel não substitui as fontes oficiais. Para validação legal, certidões ou denúncias (a fonte absoluta da verdade), consulte sempre o Portal da Transparência da Prefeitura.
+    """
     )
     # Botão para fechar o pop-up
     if st.button("Entendi, acessar o painel"):
