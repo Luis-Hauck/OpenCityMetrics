@@ -2,6 +2,7 @@ import requests
 import pandas as pd
 import io
 import logging
+import streamlit as st
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +47,7 @@ def fazer_upload(nome_arquivo, prefixo, expire, arquivo, content_type, token_hos
         print(f'Erro ao fazer upload para nuvem: {e}')
         return False
 
-
+@st.cache_data(ttl=43200)
 def obter_dados(url) -> (bool, pd.DataFrame):
     """Busca o JSON/Parquet consolidado do Blob e retorna o DataFrame pronto."""
 
