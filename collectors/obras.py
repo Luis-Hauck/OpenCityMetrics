@@ -46,7 +46,8 @@ def baixar_dados_obras(ano_inicio: int, ano_fim: int, url: str) -> tuple[bool, p
 
         context = browser.new_context(
             locale="pt-BR",
-            timezone_id="America/Sao_Paulo"
+            timezone_id="America/Sao_Paulo",
+            viewport={"width": 1920, "height": 1080}
         )
         page = context.new_page()
         page.set_default_timeout(60000)
@@ -188,7 +189,11 @@ def baixar_dados_obras(ano_inicio: int, ano_fim: int, url: str) -> tuple[bool, p
 
                 # Localiza a linha correta pela entidade e abre detalhes
                 linha_correta = frame.locator("table tbody tr").filter(has_text=entidade)
-                linha_correta.get_by_title("Visualizar").first.click()
+                botao_visualizar = linha_correta.get_by_title("Visualizar").first
+                # Garante que a tela vai rolar até ele (evita problemas de layout)
+                botao_visualizar.scroll_into_view_if_needed()
+                # Força o clique via JavaScript, ignorando qualquer coisa que esteja na frente!
+                botao_visualizar.click(force=True)
                 sleep(random.uniform(1, 3))
 
                 # Aba Execução e captura o campo de %
@@ -199,7 +204,7 @@ def baixar_dados_obras(ano_inicio: int, ano_fim: int, url: str) -> tuple[bool, p
                 lista_porcentagens.append(percentual)
 
                 # Fecha a janela/modal
-                frame.get_by_role("button", name="Fechar Janela").click()
+                frame.get_by_role("button", name="Fechar Janela").click(force=True)
                 sleep(random.uniform(0.8, 1.4))
 
             except Exception as e:

@@ -58,7 +58,7 @@ def processar_obras(novo_df:pd.DataFrame, df_base: pd.DataFrame, token_hospedage
             arquivo=caminho_local,
             prefixo='json',
             expire=90,
-            nome_arquivo='ObrasCorupa',
+            nome_arquivo='StatusObrasCorupa',
             content_type='application/json; charset=Latin1',
             token_hospedagem=token_hospedagem
         )
@@ -85,6 +85,7 @@ def limpar_dados(df_obras) -> pd.DataFrame():
     Returns:
 
     """
-    df_obras["Percentual Conclusão (%)"] = df_obras["Percentual Conclusão (%)"].str.replace(',', '.').astype(float)
+    df_obras.rename(columns={'% Conclusão': 'Percentual Conclusão (%)', }, inplace=True)
+    df_obras["Percentual Conclusão (%)"] = df_obras["Percentual Conclusão (%)"].astype(str).str.replace(',', '.').astype(float)
     df_obras["% de execução financeira"] = df_obras["% de execução financeira"].str.replace(',', '.').astype(float)
     return df_obras
