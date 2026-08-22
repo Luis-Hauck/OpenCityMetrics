@@ -19,25 +19,30 @@ url = os.getenv('ARQUIVO_BASE_OBRAS_CORUPA')
 dados_ausentes = config['SC']['Corupa']['base_dados']['obras']['dados_ausentes']
 data_ultima_atualizacao = config['SC']['Corupa']['base_dados']['obras']['ultima_atualizacao']
 
-try:
-    sucesso, df_obras = obter_dados(url)
-except Exception as e:
-    st.warning(f"Erro ao carregar os dados tente voltar depois")
-    logging.error(f"Erro ao carregar os dados tente voltar depois: {e}")
-    st.stop()
-
-df_obras['Valor Total'] = df_obras['Valor Total'].astype(float).apply(formatar_reais)
-
+sucesso, df_obras = obter_dados(url)
 
 st.title('Obras')
 
+if not sucesso or df_obras is None or df_obras.empty:
+    st.warning('Não foi possível carregar os dados das obras no momento. Tente novamente mais tarde.')
+    logging.error(f'Não foi possível carregar os dados das obras')
+    st.stop()
+
+# Nota explicativa geral
+st.caption(
+    """
+    **Finalidade analítica:** esta página acompanha obras públicas sob uma ótica agregada (andamento físico e financeiro).
+
+    **Fonte oficial como referência:** os dados podem sofrer atrasos ou lacunas conforme a atualização da Prefeitura. Para validação legal, consulte o **Portal da Transparência oficial**.
+    """
+)
+
 
 tab1, tab2 = st.tabs(['Obras em Andamento', 'Demais obras'])
-
 try:
     with tab1:
         df_obras_concluidas_filtrado = df_obras[df_obras['Situação'] == 'Em Andamento']
-        df_obras_concluidas_filtrado['% de execução financeira'] = df_obras_concluidas_filtrado['% de execução financeira'].str.replace(',', '.').astype(float)
+        df_obras_concluidas_filtrado['Valor Total'] = df_obras_concluidas_filtrado['Valor Total'].apply(formatar_reais)
         colunas_visiveis_obras_concluidas = ["Descrição", "Percentual Conclusão (%)", "% de execução financeira", "Valor Total"]
         df_visivel_obras_concluidas = df_obras_concluidas_filtrado[colunas_visiveis_obras_concluidas]
 
@@ -80,7 +85,7 @@ try:
 
     with tab2:
         df_demais_obras_filtrado = df_obras[df_obras['Situação'] != 'Em Andamento']
-        colunas_visiveis_demais_obras = ["Descrição", "Situação", "Data de Início", "Previsão Conclusão", "Valor Total"]
+        colunas_visiveis_demais_obras = ["Descrição", "Situação", "Início", "Previsão Conclusão", "Valor Total"]
         df_visivel_demais_obras = df_demais_obras_filtrado[colunas_visiveis_demais_obras]
 
         evento2 = st.dataframe(
@@ -106,6 +111,7 @@ try:
 except Exception as e:
     st.error(f"Erro ao carregar os dados tente voltar depois")
     logging.error(f"Erro ao carregar os dados tente voltar depois: {e}")
+    st.stop()
 
 if dados_ausentes > 0:
     st.info(
