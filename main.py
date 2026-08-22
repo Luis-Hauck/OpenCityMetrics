@@ -11,15 +11,7 @@ setup_logging()
 
 caminho_app_streamlit = obter_caminho_arquivo('dashboard', 'app.py')
 
-def instalar_playwright():
-    """Baixa o navegador usando o próprio Python, garantindo que vá para a pasta certa"""
-    logger.info("\n[SETUP] Baixando navegador Chromium...")
-    try:
-        # Executa 'python -m playwright install chromium' internamente
-        subprocess.run([sys.executable, "-m", "playwright", "install", "chromium"], check=True)
-        logger.info("[SETUP] Navegador instalado com sucesso!\n")
-    except Exception as e:
-        logger.error(f"[SETUP] Erro crítico ao instalar o navegador: {e}")
+
 
 def iniciar_servidor_streamlit():
     """Inicia o painel do Streamlit como um processo independente"""

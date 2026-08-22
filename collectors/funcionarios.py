@@ -1,12 +1,11 @@
 from datetime import datetime
 import asyncio
-from playwright.sync_api import sync_playwright
 import pandas as pd
 import os
-from playwright_stealth import Stealth
 from time import sleep
 import random
 import logging
+from cloakbrowser import launch
 
 from processors.limpar_dados import limpar_dados_brutos
 from utils.config import obter_caminho_arquivo
@@ -28,7 +27,7 @@ def gerar_lista_meses(mes_inicio:int, mes_fim:int, ano_inicio:int, ano_fim:int) 
     lista_meses = []
 
     while (ano_inicio < ano_fim) or (ano_inicio == ano_fim and mes_inicio <= mes_fim):
-        lista_meses.append(f"{mes_inicio:02d}/{ano_inicio:02d}")
+        lista_meses.append(f"{mes_inicio:02d}/{ano_inicio:04d}")
 
         mes_inicio += 1
         if mes_inicio > 12:
@@ -61,103 +60,83 @@ def baixar_dados_funcionarios(mes_inicio:int, mes_fim:int, ano_inicio:int, ano_f
 
     try:
         asyncio.set_event_loop(asyncio.new_event_loop())
-        with sync_playwright() as p:
-            browser = p.chromium.launch(
-                headless=False,
-                args=[
-                    "--disable-blink-features=AutomationControlled",  #
-                    "--disable-infobars",
-                    "--no-sandbox",
-                    "--disable-dev-shm-usage"
-                ]
-            )
+        browser = launch(
+            headless=False,
+            humanize=True,
+            args=[
+                # Mantemos apenas os argumentos de estabilidade para Linux
+                "--no-sandbox",
+                "--disable-dev-shm-usage",
+                
+            ]
+        )
 
 
-            context = browser.new_context(
-                locale="pt-BR",
-                timezone_id="America/Sao_Paulo"
-            )
-
-            stealth = Stealth()
-            stealth.apply_stealth_sync(context)
-
-            page = context.new_page()
-
-            page.set_default_timeout(60000)
-
-
-            frame = page.locator('iframe[title="Item"]').content_frame
+        context = browser.new_context(
+            locale="pt-BR",
+            timezone_id="America/Sao_Paulo"
+        )
+        page = context.new_page()
+        page.set_default_timeout(60000)
+        try:
+            logger.info("Acessando a página dos funcionários")
+            page.goto(url)
+            sleep(random.uniform(7.5, 15))
+            # Tenta rejeitar cookies se existir o botão
             try:
-                logger.info("Acessando a página dos funcionários")
-                page.goto(url)
-
-                sleep(random.uniform(7.5, 15))
-
-                # Tenta rejeitar cookies se existir o botão
+                page.get_by_role("button", name="Rejeitar não necessários").click(force=True)
+                sleep(random.uniform(0.5, 2))
+            except Exception:
+                pass
+            frame = page.locator('iframe[title="Item"]').content_frame
+            for data in gerar_lista_meses(mes_inicio, mes_fim, ano_inicio, ano_fim):
+                logger.info(f'Selecioando a data: {data}')
+                sleep(random.uniform(1.5, 3))
+                frame.get_by_label("Mês/Ano").select_option(label=data)
                 try:
-                    page.get_by_role("button", name="Rejeitar não necessários").click(force=True)
-                    sleep(random.uniform(0.5, 2))
+                    frame.get_by_text("Consultar", exact=True).click()
+                    sleep(random.uniform(6, 15))
                 except Exception:
                     pass
-
-
-                for data in gerar_lista_meses(mes_inicio, mes_fim, ano_inicio, ano_fim):
-                    logger.info(f'Selecioando a data: {data}')
-                    sleep(random.uniform(1.5, 3))
-                    frame.get_by_label("Mês/Ano").select_option(label=data)
-
-                    try:
-                        frame.get_by_text("Consultar", exact=True).click()
-                        sleep(random.uniform(6, 15))
-                    except Exception:
-                        pass
-
-                    logger.info("Iniciando o download...")
-
-                    page.get_by_role("button", name="Dados Abertos").click(force=True)
-
-                    # Aguarda um pouco para que o download seja iniciado
-                    page.wait_for_timeout(5000)
-
-                    with page.expect_download() as download_info:
-                        with page.expect_popup() as page1_info:
-                            frame.get_by_role("button", name="Confirmar").click(force=True)
-
-                    # Pega o arquivo que foi gerado
-                    download = download_info.value
-
-                    caminho_arquivo = obter_caminho_arquivo('data/funcionarios', f'salarios_funcionarios_corupa_{data.replace("/", "-")}.csv.csv')
-                    os.makedirs(os.path.dirname(caminho_arquivo), exist_ok=True)
-                    download.save_as(caminho_arquivo)
-                    logger.info(f"Sucesso! Arquivo salvo como: {caminho_arquivo}")
-                    df, linhas_ = limpar_dados_brutos(caminho_arquivo)
-                    df['data'] = f'01/{data}'
-                    lista_dfs.append(df)
-                    linhas_removidas += linhas_
-
-                    #Deleta o arquivo lido
-                    os.remove(caminho_arquivo)
-
-                    # fecha possível janela extra do portal
-                    try:
-                        frame.get_by_role("button", name="Fechar Janela").click()
-                    except Exception:
-                        pass
-                    sleep(random.uniform(0.3, 2))
-
-            except Exception as erro_raspagem:
+                logger.info("Iniciando o download...")
+                page.get_by_role("button", name="Dados Abertos").click(force=True)
+                # Aguarda um pouco para que o download seja iniciado
+                page.wait_for_timeout(5000)
+                with page.expect_download() as download_info:
+                    with page.expect_popup() as page1_info:
+                        frame.get_by_role("button", name="Confirmar").click(force=True)
+                # Pega o arquivo que foi gerado
+                download = download_info.value
+                caminho_arquivo = obter_caminho_arquivo('data/funcionarios', f'salarios_funcionarios_corupa_{data.replace("/", "-")}.csv.csv')
+                os.makedirs(os.path.dirname(caminho_arquivo), exist_ok=True)
+                download.save_as(caminho_arquivo)
+                logger.info(f"Sucesso! Arquivo salvo como: {caminho_arquivo}")
+                df, linhas_ = limpar_dados_brutos(caminho_arquivo)
+                df['data'] = f'01/{data}'
+                lista_dfs.append(df)
+                linhas_removidas += linhas_
+                # Deleta o arquivo lido (com tolerância a erro)
                 try:
-                    # Formata a hora sem usar os dois pontos ":"
-                    agora = datetime.now().strftime("%Y%m%d_%H%M%S")
-                    caminho_foto = obter_caminho_arquivo("logs", f"erro_funcionarios_{agora}.png")
-
-                    page.screenshot(path=str(caminho_foto), full_page=True)
-                    logger.error(f"ERRO CAPTURADO! Screenshot salvo em: {caminho_foto}")
-                except Exception as erro_foto:
-                    logger.error(f"Não foi possível tirar o screenshot: {erro_foto}")
-
-                raise erro_raspagem
-
+                    os.remove(caminho_arquivo)
+                except Exception:
+                    pass
+                # fecha possível janela extra do portal
+                try:
+                    frame.get_by_role("button", name="Fechar Janela").click()
+                except Exception:
+                    pass
+                sleep(random.uniform(0.3, 2))
+        except Exception as erro_raspagem:
+            try:
+                # Formata a hora sem usar os dois pontos ":"
+                agora = datetime.now().strftime("%Y%m%d_%H%M%S")
+                caminho_foto = obter_caminho_arquivo("logs", f"erro_funcionarios_{agora}.png")
+                page.screenshot(path=str(caminho_foto), full_page=True)
+                logger.error(f"ERRO CAPTURADO! Screenshot salvo em: {caminho_foto}")
+            except Exception as erro_foto:
+                logger.error(f"Não foi possível tirar o screenshot: {erro_foto}")
+            raise erro_raspagem
+        finally:
             browser.close()
 
         if not lista_dfs:
