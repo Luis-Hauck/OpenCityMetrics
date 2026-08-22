@@ -20,7 +20,9 @@ def iniciar_servidor_streamlit():
     comando = [
         sys.executable, "-m", "streamlit", "run", caminho_app_streamlit,
         "--server.port", "80",
-        "--server.address", "0.0.0.0"
+        "--server.address", "0.0.0.0",
+        "--client.showErrorDetails=false",
+        "--client.toolbarMode=minimal"
     ]
     # Retorna o processo (não bloqueia o código)
     return subprocess.Popen(comando)
