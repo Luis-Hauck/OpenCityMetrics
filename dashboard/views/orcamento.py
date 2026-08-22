@@ -30,6 +30,13 @@ if not sucesso or df_orcamento is None or df_orcamento.empty:
     logging.error(f'Não foi possível carregar os dados de orçamento')
     st.stop()
 
+st.caption(
+    """
+    **Análise agregada:** explore a relação entre o que foi orçado e o que está sendo executado por função, programa e ação.
+
+    **Dados sujeitos a atualização:** eventuais atrasos ou lacunas decorrem do calendário de publicação da Prefeitura. Para fins legais, consulte o **Portal da Transparência oficial**.
+    """
+)
 
 tab1, tab2 = st.tabs(['Visão geral', 'Para onde vai o dinheiro?'])
 
