@@ -61,7 +61,7 @@ def baixar_dados_funcionarios(mes_inicio:int, mes_fim:int, ano_inicio:int, ano_f
     try:
         asyncio.set_event_loop(asyncio.new_event_loop())
         browser = launch(
-            headless=False,
+            headless=True,
             humanize=True,
             args=[
                 # Mantemos apenas os argumentos de estabilidade para Linux
