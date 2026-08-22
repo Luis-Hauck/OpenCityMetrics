@@ -60,7 +60,7 @@ def processar_patrimonio(novo_df:pd.DataFrame, df_base: pd.DataFrame, token_hosp
             arquivo=caminho_local,
             prefixo='json',
             expire=90,
-            nome_arquivo='PatrimonioCorupa1',
+            nome_arquivo='PatrimonioCorupa2',
             content_type='application/json; charset=Latin1',
             token_hospedagem=token_hospedagem
         )
