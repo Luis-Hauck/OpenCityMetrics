@@ -68,10 +68,10 @@ with st.expander("🚀 Sobre este projeto, desafios e comunidade", expanded=Fals
     # Botões de comunidade lado a lado
     btn_col1, btn_col2 = st.columns(2)
     with btn_col1:
-        st.link_button("💻 Contribua no GitHub", "https://github.com/SEU_USUARIO/OpenCityMetrics",
+        st.link_button("💻 Contribua no GitHub", "https://github.com/Luis-Hauck/OpenCityMetrics",
                        use_container_width=True)
     with btn_col2:
-        st.link_button("💬 Participe do Discord", "https://discord.gg/SEU_LINK_AQUI", use_container_width=True)
+        st.link_button("💬 Participe do Discord", "https://discord.gg/Sc9Z84V3nU", use_container_width=True)
 
 st.subheader('O que você vai encontrar por aqui')
 col1, col2 = st.columns(2)
