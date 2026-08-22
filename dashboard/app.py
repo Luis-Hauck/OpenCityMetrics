@@ -1,9 +1,37 @@
 import streamlit as st
 from utils.config import obter_caminho_arquivo
 
-st.logo('https://public-blob.squarecloud.dev/c5fea93b0bd97005b83e0c46a5465f22c4b53eac/image/LogoOpenCitymetrics-ex180.jpeg'
-    'logo.png')
+caminho_logo= obter_caminho_arquivo('assets', 'logo.png')
 
+
+st.set_page_config(
+    page_title="Open City Metrics",
+    page_icon="🏛️",
+)
+
+st.logo(caminho_logo,
+        size='large',
+        )
+
+st.markdown(
+    """
+    <style>
+        [data-testid="stSidebarHeader"] img {
+            height: 5rem !important; 
+            max-height: 5rem !important;
+            width: auto !important;
+            max-width: 100% !important;
+        }
+
+        /Dá mais espaço para o cabeçalho respirar e acomodar a logo maior */
+        [data-testid="stSidebarHeader"] {
+            padding-top: 2rem !important;
+            padding-bottom: 2rem !important;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 # Define as views usando caminhos absolutos seguros
 main_page = st.Page(obter_caminho_arquivo('dashboard/views', 'home.py'), title="Página inicial")
 page_2 = st.Page(obter_caminho_arquivo('dashboard/views', 'funcionarios.py'), title="Despesas com os funcionários")
