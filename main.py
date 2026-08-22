@@ -36,8 +36,6 @@ def iniciar_agendador():
 if __name__ == "__main__":
     logger.info("=== INICIANDO SISTEMA OPENCITY METRICS ===")
 
-    instalar_playwright()
-
     # Liga o Streamlit
     processo_streamlit = iniciar_servidor_streamlit()
 
