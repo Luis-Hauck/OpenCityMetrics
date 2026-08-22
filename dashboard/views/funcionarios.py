@@ -18,21 +18,48 @@ config = load_config(caminho_config)
 # Carrega o dataframe base
 url = os.getenv('ARQUIVO_BASE_DESPESAS_FUNCIONARIOS_CORUPA')
 sucesso, df = obter_dados(url)
+
+dados_funcionarios = config['SC']['Corupa']['base_dados']['funcionarios']
+data_ultima_atualizacao = dados_funcionarios['ultima_atualizacao']
+dados_ausentes = dados_funcionarios['dados_ausentes']
+
+if not sucesso or df is None or df.empty:
+    st.warning('Não foi possível carregar os dados dos funcionários no momento. Tente novamente mais tarde.')
+    logging.error(f'Não foi possível carregar os dados de orçamento')
+    st.stop()
+
 # REMOVER ASSIM QUE A COLETA ESTIVER DISPONIVEL
 df['data'] = pd.to_datetime(df['data'], unit='ms', errors='coerce')
 
-dados_orcamento = config['SC']['Corupa']['base_dados']['funcionarios']
-data_ultima_atualizacao = dados_orcamento['ultima_atualizacao']
-dados_ausentes = dados_orcamento['dados_ausentes']
-
-if not sucesso:
-    st.warning('Falha ao carregar os dados, tente novamente mais tarde')
-    st.stop()
-
 st.title('Despesas com funcionários')
+
+# Ética e propósito da página
+st.caption(
+    """
+    **Objetivo:** esta página analisa tendências de cargos e evolução da folha de pagamento ao longo do tempo.
+    
+    **Sem exposição individual:** o foco não é a divulgação pessoal, mas sim a compreensão dos gastos públicos em nível agregado e responsável.
+    """
+)
 
 
 tab1, tab2, tab3 = st.tabs(["Visão geral", "Concentração de Gastos", 'Vínculos e Cargos'])
+
+meses = {
+    'Todos': 0,
+    'Janeiro': 1,
+    'Fevereiro': 2,
+    'Março': 3,
+    'Abril': 4,
+    'Maio': 5,
+    'Junho': 6,
+    'Julho': 7,
+    'Agosto': 8,
+    'Setembro': 9,
+    'Outubro': 10,
+    'Novembro': 11,
+    'Dezembro': 12
+}
 
 try:
     with tab1:
@@ -83,7 +110,15 @@ try:
         st.metric(label='Habitantes atuando',
                     value=f'{percentual_de_trabalhadores:.2%}',
                     delta=f"{percentual_de_trabalhadores_mes_anterior:.2%}",
-                    delta_color='inverse')
+                    delta_color='inverse',
+                  help='% de habitantes atuando na prefeitura (população: 15912 habitantes)'
+                  )
+
+        # Extrai o mês e o ano
+        nome_mes_ = list(meses.keys())[data_mais_recente.month]
+        ano_subheader = data_mais_recente.year
+
+        st.subheader(f'Despesas por cargo referente a {nome_mes_} de {ano_subheader}')
 
         # Cria uma copia do df de referencia com as colunas a serem exibidas
         view_df = df_data_ref.drop(columns=['Líquido'])
@@ -118,21 +153,6 @@ try:
     with tab2:
         # Lista com os anos disponiveis
         anos_disponiveis = sorted(df['data'].dt.year.unique(), reverse=True)
-        meses = {
-            'Todos': 0,
-            'Janeiro': 1,
-            'Fevereiro': 2,
-            'Março': 3,
-            'Abril': 4,
-            'Maio': 5,
-            'Junho': 6,
-            'Julho': 7,
-            'Agosto': 8,
-            'Setembro': 9,
-            'Outubro': 10,
-            'Novembro': 11,
-            'Dezembro': 12
-        }
 
         ano_selecionado = st.selectbox('Selecione o ano', anos_disponiveis)
         mes_selecionado = st.selectbox('Selecione o mês', list(meses.keys()), help='Ao selecionar todos Será considerado a média de proventos de todos os meses')
@@ -152,6 +172,9 @@ try:
             custo_anual=('Proventos', 'sum'),
             meses_pagos=('data', 'count')
         ).reset_index()
+
+        # Retira os registros com custo igual a zero
+        df_agrupado_ano = df_agrupado_ano[df_agrupado_ano['custo_anual'] > 0]
 
         # Custo médio por folha daquele ano específico
         df_agrupado_ano['media_mensal_no_ano'] = df_agrupado_ano['custo_anual'] / df_agrupado_ano['meses_pagos']
