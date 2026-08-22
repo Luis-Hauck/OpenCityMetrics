@@ -85,5 +85,4 @@ lab/corupa/collectors/lab/data/
 # If there are other data folders within lab, ignore them too
 lab/**/data/
 lab/
-assets/
 
