@@ -2,6 +2,7 @@ import subprocess
 import sys
 import time
 import logging
+import os
 
 from utils.logging_ import setup_logging
 from utils.config import obter_caminho_arquivo
@@ -17,12 +18,12 @@ def iniciar_servidor_streamlit():
     """Inicia o painel do Streamlit como um processo independente"""
     logger.info("Iniciando Painel Streamlit...")
     # O comando é exatamente o que você digitaria no terminal
+    os.environ["STREAMLIT_CLIENT_SHOW_ERROR_DETAILS"] = "false"
+    os.environ["STREAMLIT_CLIENT_TOOLBAR_MODE"] = "minimal"
     comando = [
         sys.executable, "-m", "streamlit", "run", caminho_app_streamlit,
         "--server.port", "80",
         "--server.address", "0.0.0.0",
-        "--client.showErrorDetails=false",
-        "--client.toolbarMode=minimal"
     ]
     # Retorna o processo (não bloqueia o código)
     return subprocess.Popen(comando)
