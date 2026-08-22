@@ -179,7 +179,7 @@ def setup_schedule():
 
     schedule.every().day.at("21:15", "America/Sao_Paulo").do(job_coletar_dados_orcamento)
     schedule.every().day.at("20:00", "America/Sao_Paulo").do(job_coletar_dados_patrimonio)
-    schedule.every().day.at("21:42", "America/Sao_Paulo").do(job_coletar_dados_funcionarios)
+    schedule.every().day.at("21:54", "America/Sao_Paulo").do(job_coletar_dados_funcionarios)
     schedule.every().day.at("21:13", "America/Sao_Paulo").do(job_coletar_dados_obras)
 
 
