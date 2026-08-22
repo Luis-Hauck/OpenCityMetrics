@@ -87,7 +87,7 @@ def job_coletar_dados_obras():
                 base = dados_cidade.get('base_dados', {})
                 if dados_cidade['base_dados']['obras']['ativo']:
                     url = dados_cidade['base_dados']['obras']['url']
-                    ano_inicio = datetime.today().year - 2
+                    ano_inicio = datetime.today().year - 3
                     ano_fim = datetime.today().year
                     tentativas = 0
                     concluido = False
@@ -122,7 +122,7 @@ def job_coletar_dados_orcamento():
                 base = dados_cidade.get('base_dados', {})
                 if dados_cidade['base_dados']['orcamento']['ativo']:
                     url = dados_cidade['base_dados']['orcamento']['url']
-                    ano_inicio = datetime.today().year - 2
+                    ano_inicio = datetime.today().year - 6
                     ano_fim = datetime.today().year
                     tentativas = 0
                     concluido = False
@@ -150,7 +150,6 @@ def job_coletar_dados_patrimonio():
         df_base = pd.DataFrame()
     caminho = obter_caminho_arquivo('data', 'config.json')
     config = load_config(rf'{caminho}')
-    logger.info(config)
     try:
         for estado, cidades in config.items():
             for cidade, dados_cidade in cidades.items():
@@ -161,7 +160,7 @@ def job_coletar_dados_patrimonio():
                     concluido = False
                     logger.info(f'Tentativa n° {tentativas+1} de acessar o portal')
                     while tentativas < 3 and not concluido:
-                        sleep(random.uniform(5, 20))
+                        sleep(random.uniform(30, 120))
                         sucesso, df_novo, linhas_removidas = baixar_dados_patrimonio(url)
                         if sucesso:
                             base['patrimonio']['dados_ausentes'] = linhas_removidas
@@ -177,10 +176,10 @@ def job_coletar_dados_patrimonio():
 
 def setup_schedule():
 
-    schedule.every().day.at("21:15", "America/Sao_Paulo").do(job_coletar_dados_orcamento)
-    schedule.every().day.at("20:00", "America/Sao_Paulo").do(job_coletar_dados_patrimonio)
-    schedule.every().day.at("21:58", "America/Sao_Paulo").do(job_coletar_dados_funcionarios)
-    schedule.every().day.at("21:13", "America/Sao_Paulo").do(job_coletar_dados_obras)
+    schedule.every().day.at("16:16", "America/Sao_Paulo").do(job_coletar_dados_orcamento)
+    schedule.every().day.at("16:12", "America/Sao_Paulo").do(job_coletar_dados_patrimonio)
+    schedule.every().day.at("22:07", "America/Sao_Paulo").do(job_coletar_dados_funcionarios)
+    schedule.every().day.at("12:20", "America/Sao_Paulo").do(job_coletar_dados_obras)
 
 
 def start_scheduler():

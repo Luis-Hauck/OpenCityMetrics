@@ -39,6 +39,8 @@ def processar_orcamento(novo_df:pd.DataFrame, df_base: pd.DataFrame, token_hospe
     """
 
     try:
+        novo_df = novo_df.rename(columns={'ano': 'Ano'})
+        df_base = df_base.rename(columns={'ano': 'Ano'})
 
         df_final = pd.concat([df_base, novo_df], ignore_index=True)
 
@@ -73,7 +75,7 @@ def processar_orcamento(novo_df:pd.DataFrame, df_base: pd.DataFrame, token_hospe
 
         return True
     except Exception as e:
-        logging.error(f"Erro ao processar os dados dos funcionarios: {e}")
+        logging.error(f"Erro ao processar os dados do orçamento: {e}")
         return False
 
 def tratar_dados(df) -> pd.DataFrame():
@@ -91,7 +93,6 @@ def tratar_dados(df) -> pd.DataFrame():
 
         # Renomeia colunas conhecidas para o padrão usado no dashboard
         mapeamento = {
-            'ano': 'Ano',
             'Inicial': 'Orçamento Inicial',
             'Atualizado': 'Orçamento Atualizado',
             'Até o Mês.1': 'Liquidado Até o Mês',
