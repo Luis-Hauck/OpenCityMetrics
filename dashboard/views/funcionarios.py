@@ -320,6 +320,10 @@ if dados_ausentes > 0:
     st.info(f"⚠️ **Nota de Transparência:** Aproximadamente {dados_ausentes} registros fornecidos pela prefeitura continham erros de "
             "formatação (linhas corrompidas) e não puderam ser lidos."
             , icon="ℹ️")
+st.caption("""
+**Nota sobre Proventos:**
+Os proventos representam o valor bruto pago a um servidor em um determinado período, incluindo componentes como salários-base, horas extras, décimo terceiro salário, férias, rescisões e demais vantagens eventuais. É importante observar que os valores apresentados refletem condições específicas do período analisado e podem variar mensalmente, não sendo uma garantia de repetição nos meses seguintes.
+""")
 
 st.info(f'Última coleta dos dados: {data_ultima_atualizacao}')
 
