@@ -95,29 +95,29 @@ try:
         gastos_mes_anterior = df_mes_anterior['Proventos'].sum()
         variacao_gastos = gastos_mes_atual - gastos_mes_anterior
 
+        # Extrai o mês e o ano
+        nome_mes_ = list(meses.keys())[data_mais_recente.month]
+        ano_subheader = data_mais_recente.year
+
         col1, col2 = st.columns(2)
 
-        col2.metric(label='Número de funcionários',
+        col2.metric(label=f'Número de funcionários em {nome_mes_} de {ano_subheader}',
                     value=n_funcionarios_atual,
                     delta=f"{diferenca_de_funcinarios:.2%}",
                     delta_color='inverse'
                     )
 
-        col1.metric(label='Gastos nesse mês',
+        col1.metric(label=f'Gastos nesse no mês de {nome_mes_} de {ano_subheader}',
                     value=f'{formatar_reais(gastos_mes_atual)}',
                     delta=f'{formatar_reais(variacao_gastos)}',
                     )
 
-        st.metric(label='Habitantes atuando',
+        st.metric(label=f'Habitantes atuando em {nome_mes_} de {ano_subheader} ',
                     value=f'{percentual_de_trabalhadores:.2%}',
                     delta=f"{percentual_de_trabalhadores_mes_anterior:.2%}",
                     delta_color='inverse',
                   help='% de habitantes atuando na prefeitura (população: 15912 habitantes)'
                   )
-
-        # Extrai o mês e o ano
-        nome_mes_ = list(meses.keys())[data_mais_recente.month]
-        ano_subheader = data_mais_recente.year
 
         st.subheader(f'Despesas por cargo referente a {nome_mes_} de {ano_subheader}')
 
