@@ -18,6 +18,7 @@ config = load_config(caminho_config)
 url = os.getenv('ARQUIVO_BASE_OBRAS_CORUPA')
 dados_ausentes = config['SC']['Corupa']['base_dados']['obras']['dados_ausentes']
 data_ultima_atualizacao = config['SC']['Corupa']['base_dados']['obras']['ultima_atualizacao']
+url_obras = config['SC']['Corupa']['base_dados']['obras']['url']
 
 sucesso, df_obras = obter_dados(url)
 
@@ -113,12 +114,11 @@ except Exception as e:
     logging.error(f"Erro ao carregar os dados tente voltar depois: {e}")
     st.stop()
 
-if dados_ausentes > 0:
-    st.info(
-        f"⚠️ **Nota de Transparência:** Aproximadamente {dados_ausentes} registros fornecidos pela prefeitura continham erros de "
-        "formatação (linhas corrompidas) e não puderam ser lidos."
-        , icon="ℹ️")
-st.info(f'Última coleta dos dados: {data_ultima_atualizacao}')
+st.divider()
+
+st.caption(f"🗓️ **Última coleta:** {data_ultima_atualizacao} &nbsp;&nbsp;|&nbsp;&nbsp; "
+           f"⚠️ **Dados ausentes:** {dados_ausentes} &nbsp;&nbsp;|&nbsp;&nbsp; "
+           f"[🏛️ **Acessar Fonte Oficial**]({url_obras})")
 
 
 

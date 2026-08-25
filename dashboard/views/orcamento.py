@@ -18,6 +18,7 @@ url = os.getenv('ARQUIVO_BASE_ORCAMENTO_CORUPA')
 dados_orcamento = config['SC']['Corupa']['base_dados']['orcamento']
 data_ultima_atualizacao = dados_orcamento['ultima_atualizacao']
 dados_ausentes = dados_orcamento['dados_ausentes']
+url_orcamento = dados_orcamento['url']
 
 sucesso, df_ = obter_dados(url)
 df_orcamento = tratar_dados(df_)
@@ -174,12 +175,11 @@ except Exception as e:
     logging.error(f"Erro ao carregar os dados: {e}")
     st.stop()
 
-if dados_ausentes > 0:
-    st.info(
-        f"⚠️ **Nota de Transparência:** Aproximadamente {dados_ausentes} registros fornecidos pela prefeitura continham erros de "
-        "formatação (linhas corrompidas) e não puderam ser lidos."
-        , icon="ℹ️")
-st.info(f'Última coleta dos dados: {data_ultima_atualizacao}')
+st.divider()
+
+st.caption(f"🗓️ **Última coleta:** {data_ultima_atualizacao} &nbsp;&nbsp;|&nbsp;&nbsp; "
+           f"⚠️ **Dados ausentes:** {dados_ausentes} &nbsp;&nbsp;|&nbsp;&nbsp; "
+           f"[🏛️ **Acessar Fonte Oficial**]({url_orcamento})")
 
 
 

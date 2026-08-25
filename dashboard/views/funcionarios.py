@@ -22,6 +22,7 @@ sucesso, df = obter_dados(url)
 dados_funcionarios = config['SC']['Corupa']['base_dados']['funcionarios']
 data_ultima_atualizacao = dados_funcionarios['ultima_atualizacao']
 dados_ausentes = dados_funcionarios['dados_ausentes']
+url_funcioanrios = dados_funcionarios['url']
 
 if not sucesso or df is None or df.empty:
     st.warning('Não foi possível carregar os dados dos funcionários no momento. Tente novamente mais tarde.')
@@ -316,16 +317,18 @@ except Exception as e:
     st.error(f"Erro ao carregar os dados tente voltar depois")
     logging.error(f"Erro ao carregar os dados tente voltar depois: {e}")
 
-if dados_ausentes > 0:
-    st.info(f"⚠️ **Nota de Transparência:** Aproximadamente {dados_ausentes} registros fornecidos pela prefeitura continham erros de "
-            "formatação (linhas corrompidas) e não puderam ser lidos."
-            , icon="ℹ️")
+
 st.caption("""
 **Nota sobre Proventos:**
 Os proventos representam o valor bruto pago a um servidor em um determinado período, incluindo componentes como salários-base, horas extras, décimo terceiro salário, férias, rescisões e demais vantagens eventuais. É importante observar que os valores apresentados refletem condições específicas do período analisado e podem variar mensalmente, não sendo uma garantia de repetição nos meses seguintes.
 """)
 
-st.info(f'Última coleta dos dados: {data_ultima_atualizacao}')
+
+st.divider()
+
+st.caption(f"🗓️ **Última coleta:** {data_ultima_atualizacao} &nbsp;&nbsp;|&nbsp;&nbsp; "
+           f"⚠️ **Dados ausentes:** {dados_ausentes} &nbsp;&nbsp;|&nbsp;&nbsp; "
+           f"[🏛️ **Acessar Fonte Oficial**]({url_funcioanrios})")
 
 
 

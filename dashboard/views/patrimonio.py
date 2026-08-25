@@ -15,6 +15,7 @@ url = os.getenv('ARQUIVO_BASE_PATRIMONIO_CORUPA')
 dados_patrimonio = config['SC']['Corupa']['base_dados']['patrimonio']
 data_ultima_atualizacao = dados_patrimonio['ultima_atualizacao']
 dados_ausentes = dados_patrimonio['dados_ausentes']
+url_patrimonio = dados_patrimonio['url']
 
 try:
     sucesso, df_= obter_dados(url)
@@ -155,8 +156,8 @@ except Exception as e:
     logging.error(f"Erro ao carregar os dados tente voltar depois: {e}")
     st.stop()
 
-if dados_ausentes > 0:
-    st.info(f"⚠️ **Nota de Transparência:** Aproximadamente {dados_ausentes} registros fornecidos pela prefeitura continham erros de "
-            "formatação (linhas corrompidas) e não puderam ser lidos. O valor real do patrimônio do município pode ser "
-            , icon="ℹ️")
-st.info(f'Última coleta dos dados: {data_ultima_atualizacao}')
+st.divider()
+
+st.caption(f"🗓️ **Última coleta:** {data_ultima_atualizacao} &nbsp;&nbsp;|&nbsp;&nbsp; "
+           f"⚠️ **Dados ausentes:** {dados_ausentes} &nbsp;&nbsp;|&nbsp;&nbsp; "
+           f"[🏛️ **Acessar Fonte Oficial**]({url_patrimonio})")

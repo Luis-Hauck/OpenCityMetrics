@@ -92,62 +92,22 @@ with col2:
 
 st.divider()
 
-st.subheader('Resumo das bases de dados')
-st.info("Clique nos blocos abaixo para visualizar os detalhes da última atualização de cada base.")
+st.markdown("### 📊 Acesse os Painéis")
+st.write("Clique abaixo na base de dados que deseja explorar:")
 
+# Cria duas colunas para os botões ficarem lado a lado no PC e empilhados no mobile
+col1, col2 = st.columns(2)
 
-# Helper para montar cartões-resumo dentro de EXPANDERS
-def cartao_base(titulo: str, chave: str, descricao: str):
-    base = dados_sc.get(chave, {}) if isinstance(dados_sc, dict) else {}
-    ativo = base.get('ativo', False)
-    ultima = base.get('ultima_atualizacao', '—')
-    faltantes = base.get('dados_ausentes', '—')
-    url = base.get('url', None)
+with col1:
+    # O caminho deve ser o exato nome do arquivo na sua pasta 'pages/'
+    st.page_link("views/funcionarios.py", label="Despesas com os funcionários", icon="👥")
+    st.page_link("views/patrimonio.py", label="Patrimônio", icon="🏢")
 
-    # Cria o bloco sanfonado com o Título
-    with st.expander(f"📊 {titulo}", expanded=False):
-        st.write(descricao)
-
-        cols = st.columns(3)
-        with cols[0]:
-            st.metric('Status', 'Ativo' if ativo else 'Indisponível')
-        with cols[1]:
-            st.metric('Última atualização', f"{ultima}")
-        with cols[2]:
-            st.metric('Dados ausentes', f"{faltantes}")
-
-        if url:
-            st.link_button('Acessar Fonte Oficial', url)
-
-
-cartao_base(
-    'Despesas com Funcionários',
-    'funcionarios',
-    'Informações sobre vínculo, cargos e proventos, com foco em evolução e distribuição dos gastos.'
-)
-
-cartao_base(
-    'Obras',
-    'obras',
-    'Acompanhamento das obras públicas: valores, prazos e percentuais de execução.'
-)
-
-cartao_base(
-    'Patrimônio',
-    'patrimonio',
-    'Bens públicos cadastrados. A métrica de dados ausentes indica campos ainda não informados/validados.'
-)
-
-cartao_base(
-    'Orçamento — Orçado x Executado',
-    'orcamento',
-    'Comparativo por ano e por categoria econômica entre o que foi planejado e o que está sendo executado.'
-)
-
-st.divider()
+with col2:
+    st.page_link("views/obras.py", label="Obras", icon="🏗️")
+    st.page_link("views/orcamento.py", label="Orçado e Executado", icon="💰")
 
 # Seção Youtube
-
 st.subheader('Acompanhe a construção do projeto')
 st.markdown("Assista à playlist no YouTube documentando os desafios e a evolução da automação deste painel.")
 
