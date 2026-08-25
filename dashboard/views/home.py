@@ -50,9 +50,9 @@ with st.expander("🚀 Sobre este projeto, desafios e comunidade", expanded=Fals
         O **OpenCityMetrics** nasceu para traduzir dados e planilhas governamentais complexas em informações acessíveis. O objetivo final é criar uma infraestrutura de dados padronizada que possa ser replicada em qualquer cidade do Brasil.
 
         ### O Desafio da Automação (Web Scraping)
-        Coletar dados de sistemas governamentais legados não é uma tarefa trivial. Atualmente, o sistema passa por uma reestruturação para superar duas barreiras principais:
-        - **Da raspagem visual para APIs:** A versão inicial simula a navegação humana (Playwright). Apesar de intuitiva, a lentidão na renderização, iframes e pop-ups imprevisíveis tornavam a coleta frágil. A solução em andamento é migrar para a interceptação direta das requisições de rede (via `httpx`).
-        - **Sistemas de Segurança:** Firewalls rigorosos identificam automações de nuvem, o que ocasionalmente pausa a nossa coleta diária. Desenvolver resiliência contra essas defesas é o foco atual.
+        Coletar dados dos portais não é uma tarefa fácil. Atualmente, o sistema passa por uma reestruturação para superar duas barreiras principais:
+        - **Da raspagem visual para APIs:** A versão inicial simula a navegação humana (Playwright). Apesar de intuitiva, a lentidão na renderização, iframes e pop-ups  tornam a coleta frágil. A solução em andamento é migrar para a interceptação direta das requisições de rede (via `httpx`).
+        - **Sistemas de Segurança:** Firewalls identificam automações de nuvem, o que ocasionalmente pausa a nossa coleta diária. Desenvolver resiliência contra essas defesas é o foco atual.
 
         ### Próximos Passos
         1. **Estabilidade e Velocidade:** Finalizar a transição para coleta via API, tornando o robô invisível e mais rápido.
