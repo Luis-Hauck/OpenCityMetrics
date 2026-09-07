@@ -4,7 +4,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from database.connection import Base
 
 
-class DadosFuncionarios(Base):
+class DadosFuncionario(Base):
     __tablename__ = "dados_funcionarios"
 
     __table_args__ = (
