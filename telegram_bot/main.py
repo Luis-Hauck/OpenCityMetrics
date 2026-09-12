@@ -16,23 +16,44 @@ if not TOKEN:
 
 bot = AsyncTeleBot(TOKEN)
 
-# Temporary memory to store onboarding states
+# Dicionário em memória para guardar os estados temporários dos usuários.
+# No fluxo de onboarding, guarda em qual etapa o usuário está (ex: escolhendo hectares).
+# No fluxo de escuta, guarda o ID do evento pendente até a confirmação.
+# Em produção, para não perder os dados se o bot reiniciar, isso poderia ser salvo no Redis.
 user_states = {}
 
 # --- Mock da IA ---
 async def simular_ia_extracao(mensagem: str) -> dict:
     """
     Função mock para simular a extração de dados usando IA (ex: OpenAI GPT-4).
+
+    Para o MVP, tenta extrair um valor numérico simples da mensagem para não
+    retornar sempre um valor fixo. Se não achar, usa 150.00 como fallback.
+
     Futuramente, aqui será feita a chamada real à API da OpenAI:
     1. Enviar `mensagem` (texto ou áudio transcrito) para o LLM.
-    2. Usar Function Calling ou JSON mode para garantir a saída no formato abaixo.
+    2. Usar 'Function Calling' ou 'JSON Mode' do OpenAI para garantir que
+       o LLM retorne o JSON estruturado contendo 'tipo', 'valor', e 'categoria'.
     """
-    await asyncio.sleep(2)  # Simula tempo de processamento
+    await asyncio.sleep(1)  # Simula o tempo de processamento de rede/IA
+
+    # Tenta achar um número na mensagem para fingir que a IA extraiu do texto do usuário
+    valor = 150.00
+    palavras = mensagem.replace(',', '.').split()
+    for p in palavras:
+        try:
+            # Pega o primeiro número que achar, ignorando cifrões (ex: R$100 -> 100)
+            limpo = p.replace('R$', '').replace('R', '').replace('$', '')
+            valor = float(limpo)
+            break
+        except ValueError:
+            continue
+
     return {
         "tipo": "despesa",
         "dados": {
-            "valor": 150.00,
-            "categoria": "insumo",
+            "valor": valor,
+            "categoria": "insumo", # Em prod, a IA classificaria a categoria com base no texto
             "descricao_original": mensagem
         }
     }
