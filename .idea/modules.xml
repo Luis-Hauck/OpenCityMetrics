@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/OpenCityMetrics.iml" filepath="$PROJECT_DIR$/.idea/OpenCityMetrics.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/opencitymetrics.iml" filepath="$PROJECT_DIR$/.idea/opencitymetrics.iml" />
     </modules>
   </component>
 </project>
