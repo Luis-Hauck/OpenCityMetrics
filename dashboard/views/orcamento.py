@@ -48,17 +48,17 @@ try:
         ano_selecionado1 = st.selectbox('Selecione o ano', lista_anos, key='ano_selecionado_tab1')
 
         dados_ano_atual = df_orcamento[df_orcamento['Ano'] == ano_selecionado1]
-        orcamento_incial = dados_ano_atual['Orçamento Inicial'].sum()
-        orcamento_atualziado = dados_ano_atual['Orçamento Atualizado'].sum()
+        orcamento_inicial = dados_ano_atual['Orçamento Inicial'].sum()
+        orcamento_atualizado = dados_ano_atual['Orçamento Atualizado'].sum()
         realizado_no_ano = dados_ano_atual['Liquidado Até o Mês'].sum()
 
-        percentual_orcado = (realizado_no_ano / orcamento_atualziado) * 100
+        percentual_orcado = (realizado_no_ano / orcamento_atualizado) * 100
 
         col1, col2 = st.columns(2, gap='xxsmall')
         col1.metric(label='Despesas Executadas', value=formatar_reais(realizado_no_ano))
         col2.metric(label='% Executado do Orcamento', value=f'{percentual_orcado:.2f}%')
-        st.metric(label='Orçamento Inicial', value=formatar_reais(orcamento_incial))
-        st.metric(label='Orçamento Atualizado', value=formatar_reais(orcamento_atualziado))
+        st.metric(label='Orçamento Inicial', value=formatar_reais(orcamento_inicial))
+        st.metric(label='Orçamento Atualizado', value=formatar_reais(orcamento_atualizado))
 
         # top maiores gastos por funçao
         top_10_gastos_por_funcoes =  dados_ano_atual.groupby(['Função'])['Liquidado Até o Mês'].sum().sort_values(ascending=False).head(10).reset_index()
@@ -106,11 +106,16 @@ try:
             )
 
     with tab2:
-        anos_disponiveis = sorted(df_orcamento['Ano'].unique(), reverse=True)
+        anos_disponiveis = sorted(df_orcamento['Ano'].dropna().unique(), reverse=True)
 
         ano_selecionado = st.selectbox('Selecione o ano', anos_disponiveis, key='ano_selecionado_tab2')
 
-        dados_ano_selecionado = df_orcamento[df_orcamento['Ano'] == ano_selecionado]
+        dados_ano_selecionado = df_orcamento[df_orcamento['Ano'] == ano_selecionado].copy()
+
+        dados_ano_selecionado['Função'] = dados_ano_selecionado['Função'].str.strip()
+        dados_ano_selecionado['Subfunção'] = dados_ano_selecionado['Subfunção'].str.strip()
+        dados_ano_selecionado['Ação'] = dados_ano_selecionado['Ação'].str.strip()
+        dados_ano_selecionado['Programa'] = dados_ano_selecionado['Programa'].str.strip()
 
         # top maiores gastos por funçao
         gastos_por_funcoes = dados_ano_selecionado.groupby(['Função'])[['Orçamento Atualizado', 'Liquidado Até o Mês']].sum().reset_index()
@@ -127,13 +132,16 @@ try:
 
         st.plotly_chart(fig2, theme="streamlit", width='content')
 
+        # Subfuções relacionadas a função selecionada
+
         lista_funcoes = sorted(dados_ano_selecionado['Função'].unique())
 
-        funcao_selecioanda = st.selectbox('Selecione a Função', lista_funcoes)
+        funcao_selecioanda = st.selectbox('Selecione a Função', lista_funcoes).strip()
 
-        dados_funcao_slecioanda =  dados_ano_selecionado[dados_ano_selecionado['Função']==funcao_selecioanda]
+        dados_funcao_selecionada = dados_ano_selecionado[dados_ano_selecionado['Função'] == funcao_selecioanda]
+        dados_subfuncao_agrupada = dados_funcao_selecionada.groupby('Subfunção')[['Liquidado Até o Mês', 'Orçamento Atualizado']].sum().reset_index()
 
-        fig3 = px.bar(dados_funcao_slecioanda,
+        fig3 = px.bar(dados_subfuncao_agrupada,
                       x='Subfunção',
                       y=['Liquidado Até o Mês','Orçamento Atualizado'],
                       barmode='group',
@@ -141,34 +149,42 @@ try:
                       )
 
         st.plotly_chart(fig3, theme="streamlit", width='content')
-        with st.expander("Ver detalhamento profundo (Subfunções, Programas e Ações)"):
-            lista_subfuncoes = sorted(dados_funcao_slecioanda['Subfunção'].unique())
-            subfuncao_selecioanda = st.selectbox('Selecione a Subfunção', lista_subfuncoes)
+        with st.expander("Ver detalhamento profundo (Programas e Ações)"):
+            # Programas relacionadas a função selecionada
+            lista_subfuncoes = sorted(dados_funcao_selecionada['Subfunção'].unique())
+            subfuncao_selecionada = st.selectbox('Selecione a Subfunção', lista_subfuncoes).strip()
 
-            dados_subfuncao_selecioanda = dados_funcao_slecioanda[dados_funcao_slecioanda['Subfunção']==subfuncao_selecioanda]
+            dados_subfuncao_selecionada = dados_funcao_selecionada[dados_funcao_selecionada['Subfunção'] == subfuncao_selecionada]
+            dados_programa_agrupado = dados_subfuncao_selecionada.groupby('Programa')[['Liquidado Até o Mês', 'Orçamento Atualizado']].sum().reset_index()
 
-            fig4 = px.bar(dados_funcao_slecioanda,
+            fig4 = px.bar(dados_programa_agrupado,
                           x='Programa',
                           y=['Liquidado Até o Mês','Orçamento Atualizado'],
                           barmode='group',
-                          title=f'Programa Realacionadas a {funcao_selecioanda}',
+                          title=f'Programas Relacionados a {subfuncao_selecionada}',
                           )
 
             st.plotly_chart(fig4, theme="streamlit", width='content')
 
-            lista_acoes = sorted(dados_funcao_slecioanda['Ação'].unique())
-            acao_selecioanda = st.selectbox('Selecione a Ação', lista_acoes)
+            # Ações do Programa selecioando
 
-            dados_acao_selecioanda = dados_funcao_slecioanda[
-                dados_funcao_slecioanda['Ação'] == acao_selecioanda]
+            lista_programas = sorted(dados_subfuncao_selecionada['Programa'].unique())
+            programa_selecionado = st.selectbox('Selecione o Programa', lista_programas)
 
-            fig5 = px.bar(dados_acao_selecioanda,
-                          x='Ação',
-                          y=['Liquidado Até o Mês','Orçamento Atualizado'],
-                          barmode='group',
-                          title=f'Ações Realacionadas a {funcao_selecioanda}',
-                          )
-            fig5.update_layout(xaxis={'categoryorder':'total descending'})
+            dados_programa_selecionado = dados_subfuncao_selecionada[dados_subfuncao_selecionada['Programa'] == programa_selecionado]
+            dados_acao_agrupada = dados_programa_selecionado.groupby('Ação')[['Liquidado Até o Mês', 'Orçamento Atualizado']].sum().reset_index()
+
+            fig5 = px.bar(dados_acao_agrupada,
+                y='Ação',
+                x=['Liquidado Até o Mês', 'Orçamento Atualizado'],
+                barmode='group',
+                orientation='h',  # Transforma o gráfico em horizontal
+                title=f'Detalhamento das Ações do Programa {programa_selecionado}',
+            )
+
+            fig5.update_layout(
+                yaxis={'categoryorder': 'total ascending'},            )
+
             st.plotly_chart(fig5, theme="streamlit", width='content')
 except Exception as e:
     st.error(f"Erro ao carregar os dados tente voltar depois")
