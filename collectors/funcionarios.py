@@ -107,7 +107,7 @@ def baixar_dados_funcionarios(mes_inicio:int, mes_fim:int, ano_inicio:int, ano_f
                         frame.get_by_role("button", name="Confirmar").click(force=True)
                 # Pega o arquivo que foi gerado
                 download = download_info.value
-                caminho_arquivo = obter_caminho_arquivo('data/funcionarios', f'salarios_funcionarios_corupa_{data.replace("/", "-")}.csv.csv')
+                caminho_arquivo = obter_caminho_arquivo('data/funcionarios', f'salarios_funcionarios_corupa_{data.replace("/", "-")}csv')
                 os.makedirs(os.path.dirname(caminho_arquivo), exist_ok=True)
                 download.save_as(caminho_arquivo)
                 logger.info(f"Sucesso! Arquivo salvo como: {caminho_arquivo}")
