@@ -5,7 +5,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from database.connection import Base
 
 
-class DadosColeta(Base):
+class RegistroColeta(Base):
     __tablename__ = "dados_coleta"
     id: Mapped[int] = mapped_column(primary_key=True, unique=True, nullable=False)
     id_cidade: Mapped[int] = mapped_column(ForeignKey("cidades.id_ibge"), nullable=False)

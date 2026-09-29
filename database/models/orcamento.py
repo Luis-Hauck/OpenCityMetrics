@@ -1,20 +1,18 @@
-from sqlalchemy import Integer, String, DateTime, ForeignKey, Text, Float, UniqueConstraint
+from sqlalchemy import String,ForeignKey, Text, Float, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
-from datetime import date, datetime
-from typing import Optional
 
 from database.connection import Base
 
-class DadosOrcamento(Base):
-    __tablename__ = "dados_orcamento"
+class Orcamento(Base):
+    __tablename__ = "orcamentos"
 
 
     __table_args__ = (
         UniqueConstraint('id_cidade', 'funcao', 'subfuncao', 'programa', 'acao', 'vinculo', 'categoria_economica',
-                         'grupo_despesa', 'modalidade', 'mes_referencia', 'ano_exercicio', name='uix_cidade_patrimonio', unique=True)
+                         'grupo_despesa', 'modalidade', 'mes_referencia', 'ano_exercicio', name='uix_cidade_orcamento', unique=True)
     )
 
-    id: Mapped[int] = mapped_column(primary_key=True, unique=True, nullable=False, incubator="autoincrement")
+    id: Mapped[int] = mapped_column(primary_key=True, unique=True, nullable=False)
     id_cidade: Mapped[int] = mapped_column(ForeignKey("cidades.id_ibge"), nullable=False)
 
     ano_exercicio: Mapped[str] = mapped_column(String(4), nullable=False)

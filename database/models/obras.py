@@ -1,18 +1,20 @@
-from sqlalchemy import String, DateTime, ForeignKey, Text, Float, UniqueConstraint
+from datetime import datetime
+
+from sqlalchemy import String, ForeignKey, Text, Float, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 
 from database.connection import Base
 
 
-class DadosObras(Base):
-    __tablename__ = "dados_obras"
+class Obra(Base):
+    __tablename__ = "obras"
 
     __table_args__ = (
         UniqueConstraint('id_cidade', 'entidade', 'numero_obra', name='uix_cidade_obra', unique=True)
     )
 
-    id: Mapped[int] = mapped_column(primary_key=True, unique=True, nullable=False, incubator="autoincrement")
+    id: Mapped[int] = mapped_column(primary_key=True, unique=True, nullable=False)
     id_cidade: Mapped[int] = mapped_column(ForeignKey("cidades.id_ibge"), nullable=False)
     entidade: Mapped[str] = mapped_column(String(150), nullable=False)
 
@@ -23,9 +25,9 @@ class DadosObras(Base):
     valor_total: Mapped[float] = mapped_column(Float, nullable=False)
     descricao_da_obra: Mapped[str] = mapped_column(Text, nullable=False)
 
-    data_cadastramento: Mapped[DateTime] = mapped_column(DateTime, nullable=False)
-    data_inicio_execucao: Mapped[DateTime] = mapped_column(DateTime, nullable=False)
-    data_previsao_conclusao: Mapped[DateTime] = mapped_column(DateTime, nullable=False)
+    data_cadastramento: Mapped[datetime] = mapped_column(nullable=False)
+    data_inicio_execucao: Mapped[datetime] = mapped_column(nullable=False)
+    data_previsao_conclusao: Mapped[datetime] = mapped_column(nullable=False)
     situacao_obra: Mapped[str] = mapped_column(String(50), nullable=False)
 
     qtd_contratada: Mapped[float] = mapped_column(Float, nullable=False)
