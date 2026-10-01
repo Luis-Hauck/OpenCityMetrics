@@ -4,7 +4,6 @@ from datetime import datetime
 from time import sleep
 import random
 import logging
-import asyncio
 from cloakbrowser import launch
 
 from processors.limpar_dados import limpar_dados_brutos
@@ -25,12 +24,9 @@ def baixar_dados_orcamento(ano_inicio: int, ano_fim: int, url: str) -> tuple[boo
     """
     lista_df: list[pd.DataFrame] = []
     linhas_removidas = 0
-
-    # Força o Python a criar um motor limpo, matando qualquer fantasma de erro anterior
-    asyncio.set_event_loop(asyncio.new_event_loop())
+    browser = None
 
     try:
-        asyncio.set_event_loop(asyncio.new_event_loop())
         browser = launch(
             headless=False,
             humanize=True,
@@ -38,7 +34,6 @@ def baixar_dados_orcamento(ano_inicio: int, ano_fim: int, url: str) -> tuple[boo
                 # Mantemos apenas os argumentos de estabilidade para Linux
                 "--no-sandbox",
                 "--disable-dev-shm-usage",
-
             ]
         )
 
@@ -61,7 +56,9 @@ def baixar_dados_orcamento(ano_inicio: int, ano_fim: int, url: str) -> tuple[boo
             except Exception:
                 pass
 
-            frame = page.locator('iframe[title="Item"]').content_frame
+            iframe_locator = page.locator('iframe[title="Item"]')
+            iframe_locator.wait_for(state="attached", timeout=60000)
+            frame = iframe_locator.content_frame
             if frame is None:
                 logger.error("Nenhum frame encontrado no iframe.")
                 return False, pd.DataFrame(), 0
@@ -73,11 +70,20 @@ def baixar_dados_orcamento(ano_inicio: int, ano_fim: int, url: str) -> tuple[boo
                 mes_str = str(mes).zfill(2)
 
                 logger.info(f"Selecionando ano {ano} e mês {mes_str}...")
-                frame.get_by_label("Ano").select_option(str(ano))
+                campo_ano = frame.get_by_label("Ano", exact=True)
+                campo_ano.wait_for(state="visible", timeout=30000)
+                campo_ano.scroll_into_view_if_needed()
+                sleep(random.uniform(0.5, 1.2))
+                campo_ano.select_option(str(ano))
+                sleep(random.uniform(0.5, 1.0))
+
+                campo_mes = frame.get_by_label("Mês", exact=True)
+                campo_mes.wait_for(state="visible", timeout=30000)
+                campo_mes.select_option(mes_str)
                 sleep(random.uniform(0.3, 0.8))
-                frame.get_by_label("Mês", exact=True).select_option(mes_str)
+
                 try:
-                    frame.get_by_text("Consultar").click()
+                    frame.get_by_text("Consultar", exact=True).click()
                     sleep(random.uniform(1, 3))
                 except Exception:
                     pass
@@ -93,7 +99,6 @@ def baixar_dados_orcamento(ano_inicio: int, ano_fim: int, url: str) -> tuple[boo
 
                 # Pega o arquivo que foi gerado
                 download = download_info.value
-
 
                 caminho_arquivo = obter_caminho_arquivo('data/orcamento', f'orcamento_despesas_{ano}.csv')
                 os.makedirs(os.path.dirname(caminho_arquivo), exist_ok=True)
@@ -127,8 +132,6 @@ def baixar_dados_orcamento(ano_inicio: int, ano_fim: int, url: str) -> tuple[boo
                 logger.error(f"Não foi possível tirar o screenshot: {erro_foto}")
             raise erro_raspagem
 
-        browser.close()
-
         if not lista_df:
             return False, pd.DataFrame(), 0
 
@@ -139,3 +142,10 @@ def baixar_dados_orcamento(ano_inicio: int, ano_fim: int, url: str) -> tuple[boo
     except Exception as e:
         logger.error(f"Erro ao processar os dados de orçamento: {e}")
         return False, pd.DataFrame(), 0
+
+    finally:
+        if browser:
+            try:
+                browser.close()
+            except Exception as e_close:
+                logger.debug(f"Erro ao fechar o navegador de orçamento: {e_close}")

@@ -49,7 +49,7 @@ def job_coletar_dados_funcionarios():
                 if dados_cidade['base_dados']['funcionarios']['ativo']:
                     url = dados_cidade['base_dados']['funcionarios']['url']
                     mes_incial = 1
-                    mes_final = 7
+                    mes_final = 9
                     ano_incial = 2026
                     ano_final = datetime.today().year
 
@@ -122,7 +122,7 @@ def job_coletar_dados_orcamento():
                 base = dados_cidade.get('base_dados', {})
                 if dados_cidade['base_dados']['orcamento']['ativo']:
                     url = dados_cidade['base_dados']['orcamento']['url']
-                    ano_inicio = datetime.today().year - 6
+                    ano_inicio = datetime.today().year - 2
                     ano_fim = datetime.today().year
                     tentativas = 0
                     concluido = False
@@ -136,7 +136,7 @@ def job_coletar_dados_orcamento():
                             save_config(rf'{caminho}', config)
                             processar_orcamento(df_novo, df_base, TOKEN_HOSPEDAGEM)
                             concluido = True
-                            logger.info('Sucessp ao coletar dados do orçamento')
+                            logger.info('Sucesso ao coletar dados do orçamento')
                         else:
                             tentativas += 1
     except Exception as e:
@@ -175,13 +175,10 @@ def job_coletar_dados_patrimonio():
 
 
 def setup_schedule():
-    pass
-    # schedule.every().day.at("16:16", "America/Sao_Paulo").do(job_coletar_dados_orcamento)
-    # schedule.every().day.at("16:12", "America/Sao_Paulo").do(job_coletar_dados_patrimonio)
-    # schedule.every().day.at("22:07", "America/Sao_Paulo").do(job_coletar_dados_funcionarios)
-    # schedule.every().day.at("12:20", "America/Sao_Paulo").do(job_coletar_dados_obras)
-
-
+    schedule.every().thursday.at("20:07", "America/Sao_Paulo").do(job_coletar_dados_orcamento)
+    schedule.every().thursday.at("20:12", "America/Sao_Paulo").do(job_coletar_dados_patrimonio)
+    schedule.every().thursday.at("20:18", "America/Sao_Paulo").do(job_coletar_dados_funcionarios)
+    schedule.every().thursday.at("20:25", "America/Sao_Paulo").do(job_coletar_dados_obras)
 def start_scheduler():
     setup_schedule()
     logger.info("Scheduler iniciado. Aguardando jobs...")

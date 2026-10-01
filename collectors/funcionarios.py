@@ -1,5 +1,4 @@
 from datetime import datetime
-import asyncio
 import pandas as pd
 import os
 from time import sleep
@@ -55,11 +54,10 @@ def baixar_dados_funcionarios(mes_inicio:int, mes_fim:int, ano_inicio:int, ano_f
     """
 
     lista_dfs = []
-
     linhas_removidas = 0
+    browser = None
 
     try:
-        asyncio.set_event_loop(asyncio.new_event_loop())
         browser = launch(
             headless=False,
             humanize=True,
@@ -67,10 +65,8 @@ def baixar_dados_funcionarios(mes_inicio:int, mes_fim:int, ano_inicio:int, ano_f
                 # Mantemos apenas os argumentos de estabilidade para Linux
                 "--no-sandbox",
                 "--disable-dev-shm-usage",
-                
             ]
         )
-
 
         context = browser.new_context(
             locale="pt-BR",
@@ -88,11 +84,20 @@ def baixar_dados_funcionarios(mes_inicio:int, mes_fim:int, ano_inicio:int, ano_f
                 sleep(random.uniform(0.5, 2))
             except Exception:
                 pass
-            frame = page.locator('iframe[title="Item"]').content_frame
+
+            iframe_locator = page.locator('iframe[title="Item"]')
+            iframe_locator.wait_for(state="attached", timeout=60000)
+            frame = iframe_locator.content_frame
+            if frame is None:
+                logger.error("Nenhum frame encontrado no iframe de funcionários.")
+                return False, pd.DataFrame(), 0
+
             for data in gerar_lista_meses(mes_inicio, mes_fim, ano_inicio, ano_fim):
-                logger.info(f'Selecioando a data: {data}')
+                logger.info(f'Selecionando a data: {data}')
                 sleep(random.uniform(1.5, 3))
-                frame.get_by_label("Mês/Ano").select_option(label=data)
+                campo_data = frame.get_by_label("Mês/Ano")
+                campo_data.wait_for(state="visible", timeout=30000)
+                campo_data.select_option(label=data)
                 try:
                     frame.get_by_text("Consultar", exact=True).click()
                     sleep(random.uniform(6, 15))
@@ -107,7 +112,7 @@ def baixar_dados_funcionarios(mes_inicio:int, mes_fim:int, ano_inicio:int, ano_f
                         frame.get_by_role("button", name="Confirmar").click(force=True)
                 # Pega o arquivo que foi gerado
                 download = download_info.value
-                caminho_arquivo = obter_caminho_arquivo('data/funcionarios', f'salarios_funcionarios_corupa_{data.replace("/", "-")}.csv.csv')
+                caminho_arquivo = obter_caminho_arquivo('data/funcionarios', f'salarios_funcionarios_corupa_{data.replace("/", "-")}.csv')
                 os.makedirs(os.path.dirname(caminho_arquivo), exist_ok=True)
                 download.save_as(caminho_arquivo)
                 logger.info(f"Sucesso! Arquivo salvo como: {caminho_arquivo}")
@@ -136,8 +141,6 @@ def baixar_dados_funcionarios(mes_inicio:int, mes_fim:int, ano_inicio:int, ano_f
             except Exception as erro_foto:
                 logger.error(f"Não foi possível tirar o screenshot: {erro_foto}")
             raise erro_raspagem
-        finally:
-            browser.close()
 
         if not lista_dfs:
             logger.warning("Nenhum dado foi baixado. Retornando vazio.")
@@ -151,3 +154,10 @@ def baixar_dados_funcionarios(mes_inicio:int, mes_fim:int, ano_inicio:int, ano_f
     except Exception as e:
         logger.error(f"Erro ao processar os dados dos funcionarios: {e}")
         return False, pd.DataFrame(), 0
+
+    finally:
+        if browser:
+            try:
+                browser.close()
+            except Exception as e_close:
+                logger.debug(f"Erro ao fechar o navegador de funcionários: {e_close}")

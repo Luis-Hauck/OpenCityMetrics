@@ -4,7 +4,6 @@ import os
 from time import sleep
 import random
 import logging
-import asyncio
 from cloakbrowser import launch
 
 from utils.config import obter_caminho_arquivo
@@ -30,9 +29,9 @@ def baixar_dados_obras(ano_inicio: int, ano_fim: int, url: str) -> tuple[bool, p
     """
     lista_dfs: list[pd.DataFrame] = []
     linhas_removidas = 0
+    browser = None
 
     try:
-        asyncio.set_event_loop(asyncio.new_event_loop())
         browser = launch(
             headless=False,
             humanize=True,
@@ -40,7 +39,6 @@ def baixar_dados_obras(ano_inicio: int, ano_fim: int, url: str) -> tuple[bool, p
                 # Mantemos apenas os argumentos de estabilidade para Linux
                 "--no-sandbox",
                 "--disable-dev-shm-usage",
-
             ]
         )
 
@@ -61,7 +59,13 @@ def baixar_dados_obras(ano_inicio: int, ano_fim: int, url: str) -> tuple[bool, p
         except Exception:
             pass
 
-        frame = page.locator('iframe[title="Item"]').content_frame
+        iframe_locator = page.locator('iframe[title="Item"]')
+        iframe_locator.wait_for(state="attached", timeout=60000)
+        frame = iframe_locator.content_frame
+        if frame is None:
+            logger.error("Nenhum frame encontrado no iframe de obras.")
+            return False, pd.DataFrame(), 0
+
         sleep(random.uniform(1, 4))
         # ETAPA 1
         #  baixar CSVs por ano
@@ -69,7 +73,9 @@ def baixar_dados_obras(ano_inicio: int, ano_fim: int, url: str) -> tuple[bool, p
             try:
                 sleep(random.uniform(0.5, 1.5))
                 logger.info(f"Selecionando o ano: {ano}")
-                frame.get_by_label("Ano", exact=True).select_option(str(ano))
+                campo_ano = frame.get_by_label("Ano", exact=True)
+                campo_ano.wait_for(state="visible", timeout=30000)
+                campo_ano.select_option(str(ano))
 
                 try:
                     frame.get_by_text("Consultar", exact=True).click()
@@ -115,12 +121,10 @@ def baixar_dados_obras(ano_inicio: int, ano_fim: int, url: str) -> tuple[bool, p
                     logger.error(f"ERRO CAPTURADO! Screenshot salvo em: {caminho_foto}-{erro_raspagem} - {ano}")
                 except Exception as erro_foto:
                     logger.error(f"Não foi possível tirar o screenshot: {erro_foto}")
-                browser.close()
                 return False, pd.DataFrame(), 0
 
         # Se nada foi baixado, aborta
         if not lista_dfs:
-            browser.close()
             return False, pd.DataFrame(), 0
 
         # Consolida os CSVs
@@ -143,7 +147,6 @@ def baixar_dados_obras(ano_inicio: int, ano_fim: int, url: str) -> tuple[bool, p
             # Se não existir, tenta colunas já separadas; se ainda assim não tiver, não há como prosseguir a etapa 2
             if not ({'Numero da Obra', 'Ano'} <= set(df_agrupado.columns)):
                 logger.info('Coluna "Número/Ano Obra" não encontrada e não há colunas de apoio; pulando etapa de execução financeira.')
-                browser.close()
                 logger.info("Dados de obras coletados com sucesso!")
                 return True, df_agrupado, linhas_removidas
 
@@ -229,11 +232,16 @@ def baixar_dados_obras(ano_inicio: int, ano_fim: int, url: str) -> tuple[bool, p
         except Exception as e:
             logger.warning(f"Erro ao limpar os dados: {e}")
 
-        browser.close()
-
         logger.info("Dados de obras coletados com sucesso!")
         return True, df_agrupado, linhas_removidas
 
     except Exception as e:
         logger.warning(f"Erro ao processar os dados de obras: {e}")
         return False, pd.DataFrame(), 0
+
+    finally:
+        if browser:
+            try:
+                browser.close()
+            except Exception as e_close:
+                logger.debug(f"Erro ao fechar o navegador de obras: {e_close}")

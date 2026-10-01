@@ -21,9 +21,15 @@ dependencies = [
     "playwright-stealth (>=2.0.3,<3.0.0)",
     "pytz (>=2026.3.post1,<2027.0)",
     "cloakbrowser (>=0.5.8,<0.6.0)",
+    "sqlalchemy (>=2.0.52,<3.0.0)",
 ]
 
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "pytest (>=9.1.1,<10.0.0)"
+]
