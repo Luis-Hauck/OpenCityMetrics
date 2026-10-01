@@ -4,7 +4,6 @@ from time import sleep
 from datetime import datetime
 import random
 import logging
-import asyncio
 from cloakbrowser import launch
 
 from processors.limpar_dados import limpar_dados_brutos
@@ -20,10 +19,10 @@ def baixar_dados_patrimonio(url: str) -> tuple[bool, pd.DataFrame, int]:
         url: URL da página de Bens (Patrimônio) no portal
 
     Returns:
-        (sucesso: bool, df: pd.DataFrame)
+        (sucesso: bool, df: pd.DataFrame, linhas_removidas: int)
     """
+    browser = None
     try:
-        asyncio.set_event_loop(asyncio.new_event_loop())
         browser = launch(
             headless=False,
             humanize=True,
@@ -31,7 +30,6 @@ def baixar_dados_patrimonio(url: str) -> tuple[bool, pd.DataFrame, int]:
                 # Mantemos apenas os argumentos de estabilidade para Linux
                 "--no-sandbox",
                 "--disable-dev-shm-usage",
-
             ]
         )
 
@@ -40,8 +38,6 @@ def baixar_dados_patrimonio(url: str) -> tuple[bool, pd.DataFrame, int]:
             timezone_id="America/Sao_Paulo",
             viewport={"width": 1920, "height": 1080}
         )
-        page = context.new_page()
-        page.set_default_timeout(60000)
         page = context.new_page()
         page.set_default_timeout(60000)
 
@@ -55,7 +51,12 @@ def baixar_dados_patrimonio(url: str) -> tuple[bool, pd.DataFrame, int]:
             except Exception:
                 pass
 
-            frame = page.locator('iframe[title="Item"]').content_frame
+            iframe_locator = page.locator('iframe[title="Item"]')
+            iframe_locator.wait_for(state="attached", timeout=60000)
+            frame = iframe_locator.content_frame
+            if frame is None:
+                logger.error("Nenhum frame encontrado no iframe de patrimônio.")
+                return False, pd.DataFrame(), 0
 
             # Executa consulta padrão (sem ano corrente)
             try:
@@ -105,6 +106,7 @@ def baixar_dados_patrimonio(url: str) -> tuple[bool, pd.DataFrame, int]:
                 frame.get_by_role("button", name="Fechar Janela").click()
             except Exception:
                 pass
+
         except Exception as erro_raspagem:
             try:
                 agora = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -115,11 +117,16 @@ def baixar_dados_patrimonio(url: str) -> tuple[bool, pd.DataFrame, int]:
                 logger.error(f"Não foi possível tirar o screenshot: {erro_foto}")
             raise erro_raspagem
 
-        browser.close()
-
         logger.info("Dados de patrimônio coletados com sucesso!")
         return True, df, linhas_removidas
 
     except Exception as e:
         logger.error(f"Erro ao processar os dados de patrimônio: {e}")
         return False, pd.DataFrame(), 0
+
+    finally:
+        if browser:
+            try:
+                browser.close()
+            except Exception as e_close:
+                logger.debug(f"Erro ao fechar o navegador de patrimônio: {e_close}")
