@@ -1,0 +1,45 @@
+Resumo de Criação e Refatoração de Repositórios
+
+Arquivos modificados:
+1. `tests/repositories/test_cidade_repository.py`:
+   - Atualizado para testar a classe real `CidadeRepository` (usando `Cidade()` objects, checando booleanos, etc).
+2. `database/models/obras.py`:
+   - Corrigido o `UniqueConstraint` removendo o argumento inválido `unique=True` dentro do table_args (já estava cobrindo a unicidade via o constraint criado).
+3. `database/models/orcamento.py`:
+   - Corrigido o `UniqueConstraint` removendo o argumento inválido `unique=True`.
+4. `database/models/patrimonio.py`:
+   - Corrigido o `UniqueConstraint` removendo o argumento inválido `unique=True`.
+
+Arquivos removidos:
+1. `tests/repositories/test_in_memory_repository.py`:
+   - Arquivo de testes que utilizava um repositório in-memory inexistente foi removido, visando limpar o repositório.
+
+Arquivos criados:
+1. `repositories/dados_coleta_repository.py`
+   - Implementado os métodos `create` (apenas insert, pois não possui restrição Unique) e `search` com filtros opcionais.
+2. `tests/repositories/test_dados_coleta_repository.py`
+   - Testes cobrindo `create` e `search` do repositório `dados_coleta_repository`.
+
+3. `repositories/obras_repository.py`
+   - Implementado `create_or_update` com suporte a `upsert` (`on_conflict_do_update`) lidando com a chave única definida no modelo.
+   - Implementado método `search` para buscas flexíveis.
+4. `tests/repositories/test_obras_repository.py`
+   - Testes cobrindo inserção, atualização e busca.
+
+5. `repositories/orcamento_repository.py`
+   - Implementado `create_or_update` similar a obras, utilizando `on_conflict_do_update`.
+   - Implementado `search`.
+6. `tests/repositories/test_orcamento_repository.py`
+   - Testes de integração com SQLite in-memory comprovando o funcionamento dos métodos.
+
+7. `repositories/patrimonio_repository.py`
+   - Implementado `create_or_update` e `search`.
+8. `tests/repositories/test_patrimonio_repository.py`
+   - Testes de criação, atualização e busca de patrimônio.
+
+Gerais:
+- Em todos os arquivos foram adicionados comentários para facilitar a compreensão.
+- Docstrings em cada método e classe, detalhando entradas e saídas.
+- Suporte híbrido SQLite/PostgreSQL nas operações de INSERT on conflict, para os testes in-memory passarem corretamente (usando dialeto sqlite se testado, ou postgresql se em produção).
+
+Todos os testes passaram com sucesso no framework Pytest.
