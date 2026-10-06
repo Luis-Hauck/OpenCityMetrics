@@ -9,7 +9,7 @@ class Orcamento(Base):
 
     __table_args__ = (
         UniqueConstraint('id_cidade', 'funcao', 'subfuncao', 'programa', 'acao', 'vinculo', 'categoria_economica',
-                         'grupo_despesa', 'modalidade', 'mes_referencia', 'ano_exercicio', name='uix_cidade_orcamento', unique=True)
+                         'grupo_despesa', 'modalidade', 'mes_referencia', 'ano_exercicio', name='uix_cidade_orcamento'),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, unique=True, nullable=False)

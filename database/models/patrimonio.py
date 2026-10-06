@@ -10,7 +10,7 @@ class Patrimonio(Base):
     __tablename__ = "patrimonios"
 
     __table_args__ = (
-        UniqueConstraint('id_cidade', 'entidade', 'codigo', name='uix_cidade_patrimonio', unique=True)
+        UniqueConstraint('id_cidade', 'entidade', 'codigo', name='uix_cidade_patrimonio'),
     )
 
 

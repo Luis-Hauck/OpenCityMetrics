@@ -11,7 +11,7 @@ class Obra(Base):
     __tablename__ = "obras"
 
     __table_args__ = (
-        UniqueConstraint('id_cidade', 'entidade', 'numero_obra', name='uix_cidade_obra', unique=True)
+        UniqueConstraint('id_cidade', 'entidade', 'numero_obra', name='uix_cidade_obra'),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, unique=True, nullable=False)
