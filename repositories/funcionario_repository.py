@@ -1,8 +1,7 @@
 from datetime import datetime, date
 
 from sqlalchemy.orm import Session
-from sqlalchemy import select, extract
-from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy import select
 import logging
 
 from database.models.funcionario import Funcionario
@@ -20,7 +19,7 @@ class FuncionarioRepository:
         Recebe o DataFrame com os dados da rotina de coleta.
         Insere os novos e atualiza os salários que sofreram alterações retroativas.
         Args:
-            dados_funcionarios : Objeto DadosFuncionario a ser salvo no banco de dados.
+            dados_funcionarios : Dicionário com os dados do funcionário a ser salvo no banco de dados.
 
         Returns:
             bool: True se adicionou com sucesso; False caso ocorra um erro.
@@ -30,20 +29,39 @@ class FuncionarioRepository:
             if not dados_funcionarios:
                 logger.error("Dados de funcionários não fornecidos.")
                 return False
-            stmt = insert(Funcionario).values(dados_funcionarios)
 
-            # index_elements: As colunas que formam a sua UniqueConstraint
-            stmt = stmt.on_conflict_do_update(
-                constraint='uix_cidade_funcionario',
-                set_=dict( # set_: Quais campos devem ser atualizados se o registro já existir
-                    cargo=stmt.excluded.cargo,
-                    regime_trabalho=stmt.excluded.regime_trabalho, # stmt.excluded carrega os valores novos que estavam tentando entrar
-                    proventos=stmt.excluded.proventos,
+            from sqlalchemy.dialects.postgresql import insert as pg_insert
+            from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 
-                )
+            dialect_name = self.session.bind.dialect.name
+
+            if dialect_name == 'sqlite':
+                stmt = sqlite_insert(Funcionario).values(dados_funcionarios)
+            else:
+                stmt = pg_insert(Funcionario).values(dados_funcionarios)
+
+            update_dict = dict(
+                cargo=stmt.excluded.cargo,
+                regime_trabalho=stmt.excluded.regime_trabalho,
+                proventos=stmt.excluded.proventos,
             )
-            self.session.execute(stmt, dados_funcionarios)
+
+            if dialect_name == 'sqlite':
+                # No sqlite usamos os campos que compõem a unique constraint
+                stmt = stmt.on_conflict_do_update(
+                    index_elements=['id_cidade', 'id_funcionario', 'data_referencia'],
+                    set_=update_dict
+                )
+            else:
+                stmt = stmt.on_conflict_do_update(
+                    constraint='uix_cidade_funcionario',
+                    set_=update_dict
+                )
+
+            self.session.execute(stmt)
             self.session.flush()
+            self.session.expire_all()
+
             logger.info(f"Dados dos servidores salvos com sucesso!")
             return True
 
@@ -69,7 +87,7 @@ class FuncionarioRepository:
             data_final:
 
         Returns:
-
+            Lista de Funcionários baseada nos filtros
         """
         try:
             smt = select(Funcionario)

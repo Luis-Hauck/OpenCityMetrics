@@ -9,7 +9,7 @@ class Funcionario(Base):
     __tablename__ = "funcionarios"
 
     __table_args__ = (
-        UniqueConstraint('id_cidade', 'id_funcionario', 'data_referencia', name='uix_cidade_funcionario', unique=True)
+        UniqueConstraint('id_cidade', 'id_funcionario', 'data_referencia', name='uix_cidade_funcionario'),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, unique=True, nullable=False)
