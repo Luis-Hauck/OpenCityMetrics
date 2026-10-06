@@ -17,7 +17,7 @@ class Funcionario(Base):
     id_funcionario: Mapped[str] = mapped_column(String, nullable=False)
     entidade: Mapped[str] = mapped_column(String(100), nullable=False)
     contrato: Mapped[str] = mapped_column(String(100), nullable=False)
-    nome_funcionario: Mapped[str] = mapped_column(String(200), nullable=False)
+    nome: Mapped[str] = mapped_column(String(200), nullable=False)
     cargo: Mapped[str] = mapped_column(String(100), nullable=False)
     regime_trabalho: Mapped[str] = mapped_column(String(100), nullable=False)
     proventos: Mapped[float] = mapped_column(Float, nullable=False)

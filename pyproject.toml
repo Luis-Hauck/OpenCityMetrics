@@ -22,7 +22,11 @@ dependencies = [
     "pytz (>=2026.3.post1,<2027.0)",
     "cloakbrowser (>=0.5.8,<0.6.0)",
     "sqlalchemy (>=2.0.52,<3.0.0)",
+<<<<<<< HEAD
     "psycopg2-binary (>=2.9.12,<3.0.0)",
+    "pytest (>=9.1.1,<10.0.0)",
+=======
+>>>>>>> develop
 ]
 
 

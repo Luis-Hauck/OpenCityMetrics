@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.engine import URL
-from sqlalchemy.orm import DeclarativeBase, sessionmaker
+from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from contextlib import contextmanager
 import logging
 from dotenv import load_dotenv
@@ -46,8 +46,6 @@ else:
 @contextmanager
 def get_db():
     """Fornece uma sessão segura e garante o fechamento ao final."""
-    if SessionLocal is None or engine is None:
-        raise RuntimeError("Banco de dados não configurado.")
     db = SessionLocal()
     try:
         yield db

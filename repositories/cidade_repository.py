@@ -1,38 +1,84 @@
+from sqlalchemy import select
 from sqlalchemy.orm import Session
-from models.cidade import Cidade
-from repositories.base_repository import BaseRepository, ItemNotFoundError
+import logging
+
+from database.models.cidade import Cidade
 
 
-class CidadeRepository(BaseRepository):
-    def __init__(self, db: Session):
-        self.db = db
+logger = logging.getLogger(__name__)
 
-    def create(self, item_data: dict) -> Cidade:
-        db_item = Cidade(**item_data)
-        self.db.add(db_item)
-        self.db.commit()
-        self.db.refresh(db_item)
-        return db_item
+class CidadeRepository:
 
-    def get(self, item_id: int) -> Cidade:
-        item = self.db.query(Cidade).filter(Cidade.id_ibge == item_id).first()
-        if not item:
-            raise ItemNotFoundError(f"Cidade with id_ibge {item_id} not found")
-        return item
+    def __init__(self, session: Session):
+        self.session = session
 
-    def get_all(self) -> list[Cidade]:
-        return self.db.query(Cidade).all()
+    def create(self, cidade: Cidade) -> bool:
+        """
+        Cria um novo objeto Cidade no banco de dados.
+        Args:
+            cidade (Cidade): Objeto Cidade a ser salvo no banco de dados.
 
-    def update(self, item_id: int, item_data: dict) -> Cidade:
-        item = self.get(item_id)
-        for key, value in item_data.items():
-            setattr(item, key, value)
-        self.db.commit()
-        self.db.refresh(item)
-        return item
+        Returns:
+            bool: True se adicionou com sucesso; False caso ocorra um erro.
 
-    def delete(self, item_id: int) -> bool:
-        item = self.get(item_id)
-        self.db.delete(item)
-        self.db.commit()
-        return True
+        """
+        try:
+            self.session.add(cidade)
+            self.session.flush()
+            logger.info(f"Cidade salva com sucesso: {cidade.nome}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Erro ao salvar cidade: {e}")
+            print(e)
+            return False
+
+    def get_by_id(self, id_ibge: int) -> Cidade | None:
+        """
+        Busca os dados da cidade pelomid do IBGE
+        Args:
+            id_ibge (int): Identificação do IBGE da cidade
+
+        Returns:
+            Cidade | None: Cidade se encontrado, None se não encontrado ou em caso de erro.
+
+        """
+        try:
+            dados_cidade = self.session.get(Cidade, id_ibge)
+
+            if not dados_cidade:
+                logger.warning(f'Dados da cidade com código do IBGE: {id_ibge} não encontrados.')
+                return None
+
+            logger.info(f"Dados da cidade: {dados_cidade.nome}")
+            return dados_cidade
+
+        except Exception as e:
+            logger.error(f"Erro ao obter dados da cidade com código do IBGE: {id_ibge}: {e}")
+            return None
+
+    def update(self, id_ibge:int, **kwargs) -> bool:
+        """
+        Atualiza os dados da cidade
+        Args:
+            id_ibge (int): Identificação do IBGE da cidade
+
+        Returns:
+            bool: True se atualizou com sucesso; False caso ocorra um erro.
+
+        """
+
+        try:
+            cidade_existente  = self.session.get(Cidade, id_ibge)
+
+            if not cidade_existente:
+                logger.warning('Não foi possível encontrar a cidade selecioanda para atualizar os dados')
+                return False
+            for key, value in kwargs.items():
+                setattr(cidade_existente, key, value)
+
+            self.session.flush()
+            return True
+        except Exception as e:
+            logger.error(f"Erro ao atualizar os dados da cidade: {e}")
+            return False
