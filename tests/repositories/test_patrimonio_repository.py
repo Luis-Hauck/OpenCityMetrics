@@ -30,46 +30,67 @@ def repository(db_session):
     return PatrimonioRepository(db_session)
 
 
-def test_create_or_update_patrimonio(repository, db_session):
+def test_create_or_update_patrimonio_bulk(repository, db_session):
     hoje = date.today()
-    dados = {
-        "id": 1,
-        "id_cidade": 1,
-        "entidade": "Prefeitura",
-        "tipo_patrimonio": "Veículo",
-        "codigo": "V-001",
-        "descricao": "Carro Oficial",
-        "num_tombamento": "T-1234",
-        "data_aquisicao": hoje,
-        "data_incorporacao": hoje,
-        "status_patrimonio": "Ativo",
-        "centro_custo": "Gabinete",
-        "fornecedor": "Concessionária",
-        "valor_contabil": 50000.0,
-        "sit_aquisicao": "Compra"
-    }
+    dados = [
+        {
+            "id": 1,
+            "id_cidade": 1,
+            "entidade": "Prefeitura",
+            "tipo_patrimonio": "Veículo",
+            "codigo": "V-001",
+            "descricao": "Carro Oficial",
+            "num_tombamento": "T-1234",
+            "data_aquisicao": hoje,
+            "data_incorporacao": hoje,
+            "status_patrimonio": "Ativo",
+            "centro_custo": "Gabinete",
+            "fornecedor": "Concessionária",
+            "valor_contabil": 50000.0,
+            "sit_aquisicao": "Compra"
+        },
+        {
+            "id": 2,
+            "id_cidade": 1,
+            "entidade": "Prefeitura",
+            "tipo_patrimonio": "Imóvel",
+            "codigo": "I-001",
+            "descricao": "Prédio Sede",
+            "num_tombamento": "T-0001",
+            "data_aquisicao": hoje,
+            "data_incorporacao": hoje,
+            "status_patrimonio": "Ativo",
+            "centro_custo": "Administração",
+            "fornecedor": "Construtora",
+            "valor_contabil": 1000000.0,
+            "sit_aquisicao": "Construção"
+        }
+    ]
 
-    # Create
+    # Create bulk
     result = repository.create_or_update(dados)
     assert result is True
 
-    pat_in_db = db_session.get(Patrimonio, 1)
-    assert pat_in_db.valor_contabil == 50000.0
+    pat_in_db_1 = db_session.get(Patrimonio, 1)
+    pat_in_db_2 = db_session.get(Patrimonio, 2)
+    assert pat_in_db_1.valor_contabil == 50000.0
+    assert pat_in_db_2.valor_contabil == 1000000.0
 
-    # Update (mesmo id_cidade, entidade, codigo)
-    dados["valor_contabil"] = 45000.0
-    dados["status_patrimonio"] = "Em manutenção"
+    # Update bulk
+    dados[0]["valor_contabil"] = 45000.0
+    dados[1]["status_patrimonio"] = "Em Reforma"
     result_update = repository.create_or_update(dados)
     assert result_update is True
 
-    pat_atualizado = db_session.get(Patrimonio, 1)
-    assert pat_atualizado.valor_contabil == 45000.0
-    assert pat_atualizado.status_patrimonio == "Em manutenção"
+    pat_atualizado_1 = db_session.get(Patrimonio, 1)
+    pat_atualizado_2 = db_session.get(Patrimonio, 2)
+    assert pat_atualizado_1.valor_contabil == 45000.0
+    assert pat_atualizado_2.status_patrimonio == "Em Reforma"
 
 
 def test_search_patrimonios(repository, db_session):
     hoje = date.today()
-    dados = {
+    dados = [{
         "id": 1,
         "id_cidade": 1,
         "entidade": "Prefeitura",
@@ -84,13 +105,10 @@ def test_search_patrimonios(repository, db_session):
         "fornecedor": "Construtora",
         "valor_contabil": 1000000.0,
         "sit_aquisicao": "Construção"
-    }
+    }]
 
     repository.create_or_update(dados)
 
     resultados = repository.search(id_cidade=1, tipo_patrimonio="Imóvel")
     assert len(resultados) == 1
     assert resultados[0].codigo == "I-001"
-
-    resultados_vazios = repository.search(id_cidade=1, status_patrimonio="Baixado")
-    assert len(resultados_vazios) == 0

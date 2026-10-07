@@ -30,56 +30,70 @@ def repository(db_session):
     return DadosColetaRepository(db_session)
 
 
-def test_create_registro_coleta(repository, db_session):
+def test_create_registro_coleta_bulk(repository, db_session):
     data_coleta = datetime.now()
-    dados = {
-        "id": 1,
-        "id_cidade": 1,
-        "software_portal": "Portal X",
-        "base_de_dados": "Base Y",
-        "url": "http://teste.com",
-        "formato_origem": "csv",
-        "frequencia_coleta": "mensal",
-        "dados_ausentes": 0,
-        "data_coleta": data_coleta
-    }
+    dados = [
+        {
+            "id": 1,
+            "id_cidade": 1,
+            "software_portal": "Portal X",
+            "base_de_dados": "Base Y",
+            "url": "http://teste.com",
+            "formato_origem": "csv",
+            "frequencia_coleta": "mensal",
+            "dados_ausentes": 0,
+            "data_coleta": data_coleta
+        },
+        {
+            "id": 2,
+            "id_cidade": 1,
+            "software_portal": "Portal Z",
+            "base_de_dados": "Base W",
+            "url": "http://teste2.com",
+            "formato_origem": "json",
+            "frequencia_coleta": "diaria",
+            "dados_ausentes": 0,
+            "data_coleta": data_coleta
+        }
+    ]
 
     result = repository.create(dados)
     assert result is True
 
     # Verifica no DB
-    registro_in_db = db_session.get(RegistroColeta, 1)
+    registro_in_db = db_session.get(RegistroColeta, 2)
     assert registro_in_db is not None
-    assert registro_in_db.software_portal == "Portal X"
+    assert registro_in_db.software_portal == "Portal Z"
     assert registro_in_db.id_cidade == 1
 
 def test_search_registro_coleta(repository, db_session):
     data_coleta = datetime.now()
-    dados1 = {
-        "id": 1,
-        "id_cidade": 1,
-        "software_portal": "Portal X",
-        "base_de_dados": "Base 1",
-        "url": "http://teste1.com",
-        "formato_origem": "csv",
-        "frequencia_coleta": "mensal",
-        "dados_ausentes": 0,
-        "data_coleta": data_coleta
-    }
-    dados2 = {
-        "id": 2,
-        "id_cidade": 1,
-        "software_portal": "Portal Y",
-        "base_de_dados": "Base 2",
-        "url": "http://teste2.com",
-        "formato_origem": "json",
-        "frequencia_coleta": "semanal",
-        "dados_ausentes": 2,
-        "data_coleta": data_coleta
-    }
+    dados = [
+        {
+            "id": 1,
+            "id_cidade": 1,
+            "software_portal": "Portal X",
+            "base_de_dados": "Base 1",
+            "url": "http://teste1.com",
+            "formato_origem": "csv",
+            "frequencia_coleta": "mensal",
+            "dados_ausentes": 0,
+            "data_coleta": data_coleta
+        },
+        {
+            "id": 2,
+            "id_cidade": 1,
+            "software_portal": "Portal Y",
+            "base_de_dados": "Base 2",
+            "url": "http://teste2.com",
+            "formato_origem": "json",
+            "frequencia_coleta": "semanal",
+            "dados_ausentes": 2,
+            "data_coleta": data_coleta
+        }
+    ]
 
-    repository.create(dados1)
-    repository.create(dados2)
+    repository.create(dados)
 
     resultados = repository.search(id_cidade=1)
     assert len(resultados) == 2

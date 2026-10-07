@@ -1,4 +1,5 @@
 import logging
+from typing import Union
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -8,18 +9,15 @@ logger = logging.getLogger(__name__)
 
 class ObrasRepository:
     def __init__(self, session: Session):
-        """
-        Inicializa o repositório de Obras com a sessão do banco de dados.
-        """
         self.session = session
 
-    def create_or_update(self, dados_obra: dict) -> bool:
+    def create_or_update(self, dados_obra: Union[dict, list[dict]]) -> bool:
         """
-        Insere ou atualiza os dados de uma obra no banco de dados.
-        Utiliza upsert baseado na chave única 'uix_cidade_obra' (id_cidade, entidade, numero_obra).
+        Insere ou atualiza os dados de uma ou várias obras no banco de dados.
+        Suporta envio em lote (bulk_upsert) através de uma lista de dicionários.
 
         Args:
-            dados_obra (dict): Dicionário contendo os dados da Obra.
+            dados_obra: Dicionário ou Lista de Dicionários com os dados da Obra.
 
         Returns:
             bool: True se adicionou/atualizou com sucesso; False caso ocorra um erro.
@@ -29,15 +27,18 @@ class ObrasRepository:
                 logger.error("Dados da obra não fornecidos.")
                 return False
 
+            if isinstance(dados_obra, dict):
+                dados_obra = [dados_obra]
+
             from sqlalchemy.dialects.postgresql import insert as pg_insert
             from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 
             dialect_name = self.session.bind.dialect.name
 
             if dialect_name == 'sqlite':
-                stmt = sqlite_insert(Obra).values(dados_obra)
+                stmt = sqlite_insert(Obra)
             else:
-                stmt = pg_insert(Obra).values(dados_obra)
+                stmt = pg_insert(Obra)
 
             update_dict = {
                 'ano_obra': stmt.excluded.ano_obra,
@@ -61,8 +62,6 @@ class ObrasRepository:
             }
 
             if dialect_name == 'sqlite':
-                # SQLite precisa referenciar as colunas do conflito
-                # e elas precisam estar em uma restrição UNIQUE para on_conflict_do_update funcionar no SQLite (>= 3.24.0)
                 stmt = stmt.on_conflict_do_update(
                     index_elements=['id_cidade', 'entidade', 'numero_obra'],
                     set_=update_dict
@@ -73,17 +72,15 @@ class ObrasRepository:
                     set_=update_dict
                 )
 
-            self.session.execute(stmt)
+            self.session.execute(stmt, dados_obra)
             self.session.flush()
-
-            # Necessário forçar expire/refresh se formos ler no mesmo teste usando SessionLocal sqlite pra atualizar a instancia no cache
             self.session.expire_all()
 
-            logger.info("Dados da obra salvos/atualizados com sucesso!")
+            logger.info("Dados das obras salvos/atualizados com sucesso em lote!")
             return True
 
         except Exception as e:
-            logger.error(f"Erro ao salvar os dados da obra: {e}")
+            logger.error(f"Erro ao salvar os dados da obra em lote: {e}")
             return False
 
     def search(self,
@@ -91,36 +88,19 @@ class ObrasRepository:
                entidade: str | None = None,
                situacao_obra: str | None = None,
                cnpj_cpf_empresa: str | None = None) -> list[Obra]:
-        """
-        Realiza a busca de obras utilizando filtros opcionais.
-
-        Args:
-            id_cidade (int, optional): Filtra pelo ID do IBGE da cidade.
-            entidade (str, optional): Filtra pela entidade responsável.
-            situacao_obra (str, optional): Filtra pela situação da obra.
-            cnpj_cpf_empresa (str, optional): Filtra pelo CNPJ/CPF da empresa responsável.
-
-        Returns:
-            list[Obra]: Lista de obras que satisfazem os filtros.
-        """
         try:
             stmt = select(Obra)
-
             if id_cidade:
                 stmt = stmt.where(Obra.id_cidade == id_cidade)
-
             if entidade:
                 stmt = stmt.where(Obra.entidade == entidade)
-
             if situacao_obra:
                 stmt = stmt.where(Obra.situacao_obra == situacao_obra)
-
             if cnpj_cpf_empresa:
                 stmt = stmt.where(Obra.cnpj_cpf_empresa == cnpj_cpf_empresa)
 
             resultados = self.session.execute(stmt).scalars().all()
             return list(resultados)
-
         except Exception as e:
             logger.error(f"Erro ao buscar obras: {e}")
             return []

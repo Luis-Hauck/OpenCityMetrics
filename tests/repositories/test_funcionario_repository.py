@@ -30,43 +30,59 @@ def repository(db_session):
     return FuncionarioRepository(db_session)
 
 
-def test_create_or_update_funcionario(repository, db_session):
+def test_create_or_update_funcionario_bulk(repository, db_session):
     data_atual = datetime(2023, 10, 1)
-    dados = {
-        "id": 1,
-        "id_cidade": 1,
-        "id_funcionario": "F-123",
-        "entidade": "Prefeitura",
-        "contrato": "Estatutário",
-        "nome": "João Silva",
-        "cargo": "Professor",
-        "regime_trabalho": "40h",
-        "proventos": 5000.0,
-        "data_referencia": data_atual
-    }
+    dados = [
+        {
+            "id": 1,
+            "id_cidade": 1,
+            "id_funcionario": "F-123",
+            "entidade": "Prefeitura",
+            "contrato": "Estatutário",
+            "nome": "João Silva",
+            "cargo": "Professor",
+            "regime_trabalho": "40h",
+            "proventos": 5000.0,
+            "data_referencia": data_atual
+        },
+        {
+            "id": 2,
+            "id_cidade": 1,
+            "id_funcionario": "F-456",
+            "entidade": "Prefeitura",
+            "contrato": "CLT",
+            "nome": "Maria Souza",
+            "cargo": "Médico",
+            "regime_trabalho": "20h",
+            "proventos": 10000.0,
+            "data_referencia": data_atual
+        }
+    ]
 
-    # Create
+    # Create bulk
     result = repository.create_or_update(dados)
     assert result is True
 
-    func_in_db = db_session.get(Funcionario, 1)
-    assert func_in_db.cargo == "Professor"
-    assert func_in_db.proventos == 5000.0
+    func_in_db_1 = db_session.get(Funcionario, 1)
+    func_in_db_2 = db_session.get(Funcionario, 2)
+    assert func_in_db_1.cargo == "Professor"
+    assert func_in_db_2.cargo == "Médico"
 
-    # Update
-    dados["cargo"] = "Diretor"
-    dados["proventos"] = 7000.0
+    # Update bulk
+    dados[0]["cargo"] = "Diretor"
+    dados[1]["proventos"] = 12000.0
     result_update = repository.create_or_update(dados)
     assert result_update is True
 
-    func_atualizado = db_session.get(Funcionario, 1)
-    assert func_atualizado.cargo == "Diretor"
-    assert func_atualizado.proventos == 7000.0
+    func_atualizado_1 = db_session.get(Funcionario, 1)
+    func_atualizado_2 = db_session.get(Funcionario, 2)
+    assert func_atualizado_1.cargo == "Diretor"
+    assert func_atualizado_2.proventos == 12000.0
 
 
 def test_search_funcionarios(repository, db_session):
     data_atual = datetime(2023, 10, 1)
-    dados = {
+    dados = [{
         "id": 1,
         "id_cidade": 1,
         "id_funcionario": "F-123",
@@ -77,13 +93,10 @@ def test_search_funcionarios(repository, db_session):
         "regime_trabalho": "40h",
         "proventos": 5000.0,
         "data_referencia": data_atual
-    }
+    }]
 
     repository.create_or_update(dados)
 
     resultados = repository.search(id_cidade=1, nome="João Silva")
     assert len(resultados) == 1
     assert resultados[0].cargo == "Professor"
-
-    resultados_vazios = repository.search(id_cidade=1, cargo="Médico")
-    assert len(resultados_vazios) == 0

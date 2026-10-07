@@ -1,11 +1,11 @@
 from datetime import datetime, date
+from typing import Union
 
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 import logging
 
 from database.models.funcionario import Funcionario
-
 
 logger = logging.getLogger(__name__)
 
@@ -14,31 +14,36 @@ class FuncionarioRepository:
     def __init__(self, session: Session):
         self.session = session
 
-    def create_or_update(self, dados_funcionarios:dict) -> bool:
+    def create_or_update(self, dados_funcionarios: Union[dict, list[dict]]) -> bool:
         """
-        Recebe o DataFrame com os dados da rotina de coleta.
-        Insere os novos e atualiza os salários que sofreram alterações retroativas.
+        Recebe os dados da rotina de coleta (um dicionário ou uma lista deles).
+        Insere os novos e atualiza os salários que sofreram alterações retroativas em lote (bulk).
+
         Args:
-            dados_funcionarios : Dicionário com os dados do funcionário a ser salvo no banco de dados.
+            dados_funcionarios : Dicionário ou Lista de Dicionários com os dados do(s) funcionário(s).
 
         Returns:
             bool: True se adicionou com sucesso; False caso ocorra um erro.
-
         """
         try:
             if not dados_funcionarios:
                 logger.error("Dados de funcionários não fornecidos.")
                 return False
 
+            # Assegura que sempre seja tratado como lista para o bulk execute
+            if isinstance(dados_funcionarios, dict):
+                dados_funcionarios = [dados_funcionarios]
+
             from sqlalchemy.dialects.postgresql import insert as pg_insert
             from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 
             dialect_name = self.session.bind.dialect.name
 
+            # Constroi o statement sem acoplar os valores
             if dialect_name == 'sqlite':
-                stmt = sqlite_insert(Funcionario).values(dados_funcionarios)
+                stmt = sqlite_insert(Funcionario)
             else:
-                stmt = pg_insert(Funcionario).values(dados_funcionarios)
+                stmt = pg_insert(Funcionario)
 
             update_dict = dict(
                 cargo=stmt.excluded.cargo,
@@ -47,7 +52,6 @@ class FuncionarioRepository:
             )
 
             if dialect_name == 'sqlite':
-                # No sqlite usamos os campos que compõem a unique constraint
                 stmt = stmt.on_conflict_do_update(
                     index_elements=['id_cidade', 'id_funcionario', 'data_referencia'],
                     set_=update_dict
@@ -58,15 +62,16 @@ class FuncionarioRepository:
                     set_=update_dict
                 )
 
-            self.session.execute(stmt)
+            # Execute suporta lote (bulk) de dicionarios automaticamente
+            self.session.execute(stmt, dados_funcionarios)
             self.session.flush()
             self.session.expire_all()
 
-            logger.info(f"Dados dos servidores salvos com sucesso!")
+            logger.info(f"Dados dos servidores salvos com sucesso em lote!")
             return True
 
         except Exception as e:
-            logger.error(f"Erro ao salvar os dados: {e}")
+            logger.error(f"Erro ao salvar os dados em lote: {e}")
             print(e)
             return False
 
@@ -77,41 +82,22 @@ class FuncionarioRepository:
         data_inicial: date | datetime | None = None,
         data_final: date | datetime | None = None,
     ) -> list[Funcionario]:
-        """
-
-        Args:
-            id_cidade:
-            cargo:
-            nome:
-            data_inicial:
-            data_final:
-
-        Returns:
-            Lista de Funcionários baseada nos filtros
-        """
         try:
             smt = select(Funcionario)
-
-            # Empilhamos os filtros
             if id_cidade:
                 smt = smt.where(Funcionario.id_cidade == id_cidade)
-
             if nome:
                 smt = smt.where(Funcionario.nome == nome)
-
             if data_inicial:
                 smt = smt.where(Funcionario.data_referencia >= data_inicial)
-
             if data_final:
                 smt = smt.where(Funcionario.data_referencia <= data_final)
-
             if cargo:
                 smt = smt.where(Funcionario.cargo == cargo)
 
             resultado = self.session.execute(smt).scalars().all()
-
             return list(resultado)
 
         except Exception as e:
-            logger.error(f"Erro ao ao buscar as informações para consulta realizada: {e}")
+            logger.error(f"Erro ao buscar informações: {e}")
             return []
