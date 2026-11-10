@@ -10,10 +10,10 @@ import logging
 from time import sleep
 
 from services.cloud_storage import obter_dados
-from processors.funcionarios import processar_funcionarios
+from processors.funcionarios import processar_funcionarios, tratar_dados as tratar_dados_funcionarios
 from processors.obras import processar_obras
-from processors.orcamento import processar_orcamento
-from processors.patrimonio import processar_patrimonio
+from processors.orcamento import processar_orcamento, tratar_dados as tratar_dados_orcamento
+from processors.patrimonio import processar_patrimonio, tratar_dados as tratar_dados_patrimonio
 from collectors.funcionarios import baixar_dados_funcionarios
 from collectors.obras import baixar_dados_obras
 from collectors.orcamento import baixar_dados_orcamento
@@ -60,7 +60,8 @@ def job_coletar_dados_funcionarios():
                         sleep(random.uniform(20, 120))
                         sucesso, df_novo, linhas_removidas = baixar_dados_funcionarios(mes_incial, mes_final, ano_incial, ano_final, url)
                         if sucesso:
-                            dados_cidade['base_dados']['funcionarios']['dados_ausentes'] = linhas_removidas
+                            df_novo, removidas_tratamento = tratar_dados_funcionarios(df_novo)
+                            dados_cidade['base_dados']['funcionarios']['dados_ausentes'] = linhas_removidas + removidas_tratamento
                             dados_cidade['base_dados']['funcionarios']['ultima_atualizacao'] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
                             save_config(caminho, config)
@@ -131,7 +132,8 @@ def job_coletar_dados_orcamento():
                         sleep(random.uniform(5, 15))
                         sucesso, df_novo, linhas_removidas = baixar_dados_orcamento(ano_inicio, ano_fim, url)
                         if sucesso:
-                            base['orcamento']['dados_ausentes'] = linhas_removidas
+                            df_novo, removidas_tratamento = tratar_dados_orcamento(df_novo)
+                            base['orcamento']['dados_ausentes'] = linhas_removidas + removidas_tratamento
                             base['orcamento']['ultima_atualizacao'] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
                             save_config(rf'{caminho}', config)
                             processar_orcamento(df_novo, df_base, TOKEN_HOSPEDAGEM)
@@ -163,7 +165,8 @@ def job_coletar_dados_patrimonio():
                         sleep(random.uniform(30, 120))
                         sucesso, df_novo, linhas_removidas = baixar_dados_patrimonio(url)
                         if sucesso:
-                            base['patrimonio']['dados_ausentes'] = linhas_removidas
+                            df_novo, removidas_tratamento = tratar_dados_patrimonio(df_novo)
+                            base['patrimonio']['dados_ausentes'] = linhas_removidas + removidas_tratamento
                             base['patrimonio']['ultima_atualizacao'] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
                             save_config(rf'{caminho}', config)
                             processar_patrimonio(df_novo, df_base, TOKEN_HOSPEDAGEM)
