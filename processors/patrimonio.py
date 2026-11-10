@@ -44,12 +44,20 @@ def processar_patrimonio(novo_df:pd.DataFrame, df_base: pd.DataFrame, token_hosp
 
         df_final = pd.concat([df_base, novo_df], ignore_index=True)
 
+        if 'Unidade Gestora' in df_final.columns and 'Entidade' not in df_final.columns:
+            df_final.rename(columns={'Unidade Gestora': 'Entidade'}, inplace=True)
+
+        subset_cols = [c for c in ['Entidade', 'Código'] if c in df_final.columns]
+        if not subset_cols and 'Unidade Gestora' in df_final.columns:
+            subset_cols = ['Unidade Gestora', 'Código']
+
         # Apaga duplicatas, olhando APENAS para a chave composta
         # O parâmetro keep='last' garante que, se houver conflito, o dado que veio
         # do df_novo (o que acabou de ser baixado) vença e mate o dado velho.
-        df_final = df_final.drop_duplicates(
-            subset=['Unidade Gestora', 'Código'],
-            keep='last')
+        if subset_cols:
+            df_final = df_final.drop_duplicates(
+                subset=subset_cols,
+                keep='last')
 
         
         # Salva em JSON num caminho concreto e faz upload
@@ -78,16 +86,22 @@ def processar_patrimonio(novo_df:pd.DataFrame, df_base: pd.DataFrame, token_hosp
         logger.error(f"Erro ao processar os dados dos patrimonio: {e}")
         return False
 
-def tratar_dados(df) -> pd.DataFrame():
+def tratar_dados(df) -> tuple[pd.DataFrame, int]:
     """
     Trata o df.
     Args:
         df:
 
-    Returns:
+    Returns: Retorna o dataframelido com o número de linhas removidas.
 
     """
     try:
+
+        if df is None or df.empty:
+            return pd.DataFrame() if df is None else df, 0
+
+        linhas_brutas_df = len(df)
+
         df["Código"] = pd.to_numeric(df["Código"], errors='coerce')
 
         df['Aquisição'] = pd.to_datetime(
@@ -103,14 +117,19 @@ def tratar_dados(df) -> pd.DataFrame():
             errors='coerce',
         )
 
-        df = df.dropna(subset=["Aquisição", "Código", "Incorporação"])
+        df["Valor Contábil"] = pd.to_numeric(df["Valor Contábil"], errors='coerce')
+
+        df = df.dropna(subset=["Aquisição", "Código", "Incorporação", "Valor Contábil"])
 
         df["Valor Contábil"] = df["Valor Contábil"].astype(float)
 
         df.rename(columns={'Unidade Gestora': 'Entidade'}, inplace=True)
 
-        return df
+        linhas_df_tratado = len(df)
+        linhas_removidas_no_tratamento = linhas_brutas_df - linhas_df_tratado
+
+        return df, linhas_removidas_no_tratamento
 
     except Exception as e:
         logger.info(f"Erro ao tratar os dados: {e}")
-        return pd.DataFrame()
+        return pd.DataFrame(), 0

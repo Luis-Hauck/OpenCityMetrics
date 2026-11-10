@@ -32,7 +32,7 @@ def limpar_dados_brutos(caminho, sep=';') -> tuple[pd.DataFrame, int]:
 
     except Exception as e:
         print(f'Erro ao limpar dados: {e}')
-        return pd.DataFrame, 0
+        return pd.DataFrame(), 0
 
 
 def formatar_reais(valor:float) -> str:
@@ -50,5 +50,3 @@ def formatar_reais(valor:float) -> str:
     except Exception as e:
         print(f'Erro ao formatar o valor: {e} ')
         return 'R$ 0,00'
-
-

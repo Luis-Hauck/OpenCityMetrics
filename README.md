@@ -43,7 +43,7 @@ Se preferir, acesse pelo link da playlist acima diretamente no canal do YouTube.
 
 ## Configuração
 1. Clone o repositório.
-2. Crie um arquivo `.env` na raiz com as variáveis necessárias (URLs do blob e token da nuvem):
+2. Crie um arquivo `.env.dev` na raiz com as variáveis necessárias (URLs do blob e token da nuvem):
    
    ```env
    # URLs públicas (blob) dos JSONs consolidados
