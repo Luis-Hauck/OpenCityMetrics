@@ -6,7 +6,6 @@ import logging
 import plotly.express as px
 
 from services.cloud_storage import obter_dados
-from processors.orcamento import tratar_dados
 from processors.limpar_dados import formatar_reais
 
 load_dotenv()
@@ -20,8 +19,7 @@ data_ultima_atualizacao = dados_orcamento['ultima_atualizacao']
 dados_ausentes = dados_orcamento['dados_ausentes']
 url_orcamento = dados_orcamento['url']
 
-sucesso, df_ = obter_dados(url)
-df_orcamento = tratar_dados(df_)
+sucesso, df_orcamento = obter_dados(url)
 
 st.title('Orçamento Atualizado e Executado')
 

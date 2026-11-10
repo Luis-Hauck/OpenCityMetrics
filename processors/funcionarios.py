@@ -92,3 +92,37 @@ def processar_funcionarios(novo_df:pd.DataFrame, df_base: pd.DataFrame, token_ho
     except Exception as e:
         logger.error(f"Erro ao processar os dados dos funcionarios: {e}")
         return False
+
+def tratar_dados(df) -> tuple[pd.DataFrame, int]:
+    """
+    Trata o df.
+    Args:
+        df:
+
+    Returns: Retorna o dataframe tratado com o número de linhas removidas.
+
+    """
+    try:
+
+        if df is None or df.empty:
+            return pd.DataFrame() if df is None else df, 0
+
+        linhas_brutas_df = len(df)
+
+        df['data'] = pd.to_datetime(
+            df['data'],
+            dayfirst=True,
+            format='mixed',
+            errors='coerce',
+        )
+
+        df = df.dropna(subset=['Funcionário', 'Cargo', 'data'])
+
+        linhas_df_tratado = len(df)
+        linhas_removidas_no_tratamento = linhas_brutas_df - linhas_df_tratado
+
+        return df, linhas_removidas_no_tratamento
+
+    except Exception as e:
+        logger.error(f"Erro ao tratar os dados: {e}")
+        return pd.DataFrame(), 0

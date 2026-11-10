@@ -39,6 +39,9 @@ def processar_orcamento(novo_df:pd.DataFrame, df_base: pd.DataFrame, token_hospe
     """
 
     try:
+        if df_base is not None and not df_base.empty:
+            df_base, _ = tratar_dados(df_base)
+
         novo_df = novo_df.rename(columns={'ano': 'Ano'})
         df_base = df_base.rename(columns={'ano': 'Ano'})
 
@@ -78,24 +81,29 @@ def processar_orcamento(novo_df:pd.DataFrame, df_base: pd.DataFrame, token_hospe
         logging.error(f"Erro ao processar os dados do orçamento: {e}")
         return False
 
-def tratar_dados(df) -> pd.DataFrame():
+def tratar_dados(df) -> tuple[pd.DataFrame, int]:
     """
     Padroniza e trata o DataFrame de orçamento para consumo no dashboard.
 
     - Renomeia colunas para nomes padronizados.
     - Converte colunas numéricas para float.
     - Remove colunas auxiliares se existirem.
+
+    Returns: Retorna o dataframe tratado com o número de linhas removidas.
     """
     try:
         if df is None or len(df) == 0:
             logging.info(f'DataFrame com dados do orçamento está vazio.')
-            return pd.DataFrame()
+            return pd.DataFrame(), 0
+
+        linhas_brutas_df = len(df)
 
         # Renomeia colunas conhecidas para o padrão usado no dashboard
         mapeamento = {
             'Inicial': 'Orçamento Inicial',
             'Atualizado': 'Orçamento Atualizado',
             'Até o Mês.1': 'Liquidado Até o Mês',
+            'ano': 'Ano',
         }
         # Apenas renomeia o que existir
         colunas_existentes = {k: v for k, v in mapeamento.items() if k in df.columns}
@@ -105,8 +113,23 @@ def tratar_dados(df) -> pd.DataFrame():
         # Remove colunas não utilizadas, ignorando se não existirem
         df = df.drop(columns=["No Mês", "Até o Mês", "No Mês.1", "No Mês.2", "Até o Mês.2"], errors='ignore')
 
-        return df
+        df['Orçamento Inicial'] = pd.to_numeric(df['Orçamento Inicial'], errors='coerce')
+        df['Orçamento Atualizado'] = pd.to_numeric(df['Orçamento Atualizado'], errors='coerce')
+        df['Liquidado Até o Mês'] = pd.to_numeric(df['Liquidado Até o Mês'], errors='coerce')
+
+        df = df.dropna(
+            subset=[
+                'Entidade', 'Função', 'Subfunção', 'Programa', 'Ação',
+                'Vínculo', 'Categoria Econômica', 'Grupo de Despesa', 'Modalidade', 'Ano',
+                'Orçamento Inicial', 'Orçamento Atualizado', 'Liquidado Até o Mês',
+            ]
+        )
+
+        linhas_df_tratado = len(df)
+        linhas_removidas_no_tratamento = linhas_brutas_df - linhas_df_tratado
+
+        return df, linhas_removidas_no_tratamento
 
     except Exception as e:
         logging.error(f"Erro ao tratar os dados do orçamento: {e}")
-        return pd.DataFrame()
+        return pd.DataFrame(), 0

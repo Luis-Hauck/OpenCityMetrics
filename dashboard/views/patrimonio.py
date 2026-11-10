@@ -4,7 +4,6 @@ from dotenv import load_dotenv
 import logging
 
 from services.cloud_storage import obter_dados
-from processors.patrimonio import tratar_dados
 from utils.config import load_config
 
 load_dotenv()
@@ -18,8 +17,7 @@ dados_ausentes = dados_patrimonio['dados_ausentes']
 url_patrimonio = dados_patrimonio['url']
 
 try:
-    sucesso, df_= obter_dados(url)
-    df_patrimonio = tratar_dados(df_)
+    sucesso, df_patrimonio = obter_dados(url)
 except Exception as e:
     st.warning(f"Erro ao carregar os dados tente voltar depois")
     logging.error(f"Erro ao carregar os dados tente voltar depois: {e}")
